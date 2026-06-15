@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, shrink-to-fit=no">
   <meta name="theme-color" content="#0a0a0a">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="./icon-192.png">
   
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -19,7 +21,6 @@
     body { margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; overflow: hidden; background-color: var(--color-bg); }
     ::-webkit-scrollbar { width: 0px; background: transparent; }
     
-    /* Liquid Glass Engine: Blur tinggi, border melingkar, refraksi halus */
     .glass-panel {
       background: var(--color-glass);
       backdrop-filter: blur(32px);
@@ -32,7 +33,7 @@
       background: var(--color-input); 
       color: var(--color-text); 
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
-      border-radius: 1.5rem !important; /* Rounded inputs */
+      border-radius: 1.5rem !important;
     }
     input:focus, textarea:focus { outline: 2px solid var(--color-primary); background: var(--color-input-focus); }
     input::placeholder, textarea::placeholder { color: var(--color-text-muted); }
@@ -48,7 +49,6 @@
     const { useState, useEffect, useMemo, Component } = React;
     const { motion, AnimatePresence } = window.Motion;
 
-    // --- 1. ERROR BOUNDARY ---
     class ErrorBoundary extends Component {
       constructor(props) { super(props); this.state = { hasError: false, errorInfo: null }; }
       static getDerivedStateFromError(error) { return { hasError: true, errorInfo: error.toString() }; }
@@ -68,22 +68,21 @@
       }
     }
 
-    // --- 2. ASSETS & UTILS ---
-    const Icon = ({ name, size=24, color="currentColor" }) => {
+    const Icon = ({ name, size=24, color="currentColor", className="" }) => {
       const icons = {
-        checkCircle: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>,
-        circle: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle></svg>,
-        trash: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>,
-        plus: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>,
-        settings: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>,
-        search: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>,
-        flame: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path></svg>,
-        moon: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>,
-        sun: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line></svg>,
-        mic: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>,
-        bell: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>,
-        clock: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>,
-        refresh: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+        checkCircle: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>,
+        circle: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"></circle></svg>,
+        trash: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>,
+        plus: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>,
+        settings: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>,
+        search: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>,
+        flame: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path></svg>,
+        moon: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>,
+        sun: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line></svg>,
+        mic: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>,
+        bell: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>,
+        clock: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>,
+        refresh: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
       };
       return icons[name] || null;
     };
@@ -91,7 +90,6 @@
     const THEMES = { blue: '#3b82f6', orange: '#f97316', purple: '#8b5cf6', emerald: '#10b981', rose: '#f43f5e' };
     const formatIDDate = (iso) => iso ? new Date(iso).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
     
-    // Engine Audio
     let alarmContext = null;
     let alarmInterval = null;
     let isAlarmUnlocked = false;
@@ -160,7 +158,6 @@
       return draft;
     };
 
-    // --- 3. MAIN APPLICATION ---
     function App() {
       const [tasks, setTasks] = useState(() => {
         try { const local = localStorage.getItem('tms_data_v7'); return local ? JSON.parse(local) : []; } 
@@ -175,14 +172,14 @@
       const [view, setView] = useState('tasks');
       const [activeTab, setActiveTab] = useState('Aktif');
       const [searchQuery, setSearchQuery] = useState('');
-      const [urgentFilter, setUrgentFilter] = useState(10 * 3600 * 1000); // Default 10 Jam
+      const [urgentFilter, setUrgentFilter] = useState(10 * 3600 * 1000); 
       
       const [modalState, setModalState] = useState({ isOpen: false, mode: 'create', data: null });
       const [confirmDialog, setConfirmDialog] = useState(null);
       const [activeAlarmTask, setActiveAlarmTask] = useState(null);
       const [isListening, setIsListening] = useState(false);
 
-      // Sinkronisasi Persistensi & Tema Dinamis
+      // Injeksi Sinkronisasi CSS
       useEffect(() => {
         localStorage.setItem('tms_data_v7', JSON.stringify(tasks));
         localStorage.setItem('tms_sets_v7', JSON.stringify(settings));
@@ -210,7 +207,18 @@
         root.style.setProperty('--color-primary', THEMES[settings.theme]);
       }, [tasks, settings]);
 
-      // Unlock Audio & Alarm Tracker
+      // Viewport Healing Observer (Perbaikan Sentral)
+      useEffect(() => {
+        if (!modalState.isOpen && !confirmDialog) {
+          // Jeda eksekusi untuk memastikan keyboard sepenuhnya terdisosiasi dari rendering engine
+          setTimeout(() => {
+            window.scrollTo(0, 0);
+            document.body.scrollTop = 0;
+            document.documentElement.scrollTop = 0;
+          }, 50);
+        }
+      }, [modalState.isOpen, confirmDialog]);
+
       useEffect(() => {
         const unlockAudio = () => { if(!isAlarmUnlocked){ isAlarmUnlocked=true; if(!alarmContext) alarmContext = new (window.AudioContext || window.webkitAudioContext)(); } };
         document.body.addEventListener('touchstart', unlockAudio, { once: true });
@@ -246,7 +254,7 @@
 
       const handleVoiceInput = () => {
         const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SpeechRec) { alert("Peramban Anda tidak mendukung Web Speech API."); return; }
+        if (!SpeechRec) { alert("Sistem operasi menolak akses instrumen mikrofon pada ekosistem luring."); return; }
         const recognition = new SpeechRec();
         recognition.lang = 'id-ID';
         recognition.start();
@@ -260,7 +268,6 @@
         recognition.onend = () => setIsListening(false);
       };
 
-      // Filter Data Resolusi Tinggi
       const activeTasks = useMemo(() => {
         const query = searchQuery.toLowerCase();
         let source = tasks;
@@ -270,7 +277,6 @@
           source = tasks.filter(t => {
             if (t.completed || !t.dueDate) return false;
             const diff = new Date(t.dueDate).getTime() - now;
-            // Evaluasi rentang filter. Jika <= urgentFilter dan belum terlalu kadaluarsa (toleransi 1 hari).
             return diff <= urgentFilter && diff > -86400000;
           });
         } else if (view === 'tasks') {
@@ -297,7 +303,7 @@
       };
 
       return (
-        <div className="w-full h-full flex flex-col relative">
+        <div className="w-full h-full flex flex-col relative overflow-hidden">
           
           <AnimatePresence>
             {activeAlarmTask && (
@@ -314,11 +320,12 @@
             )}
           </AnimatePresence>
 
-          {/* Ambient Liquid Orbs */}
+          {/* Ambient Render */}
           <div className="absolute top-[-10%] left-[-20%] w-[80%] h-[50%] rounded-[50%] opacity-15 blur-[120px] pointer-events-none transition-colors duration-1000" style={{ backgroundColor: 'var(--color-primary)' }}></div>
           <div className="absolute bottom-[-10%] right-[-20%] w-[60%] h-[40%] rounded-[50%] opacity-10 blur-[100px] pointer-events-none transition-colors duration-1000" style={{ backgroundColor: 'var(--color-primary)' }}></div>
 
-          <header className="px-5 pt-10 pb-5 z-30 glass-panel rounded-b-[2.5rem] flex flex-col gap-4 relative border-t-0 border-x-0">
+          {/* Penguncian Dimensi shrink-0 pada Header */}
+          <header className="shrink-0 px-5 pt-10 pb-5 z-30 glass-panel rounded-b-[2.5rem] flex flex-col gap-4 relative border-t-0 border-x-0">
             <div className="flex justify-between items-center">
               <h1 className="text-2xl font-extrabold tracking-tight flex items-center gap-2" style={{ color: 'var(--color-primary)' }}>
                 {view === 'tasks' ? 'Daftar Tugas' : view === 'urgent' ? <><Icon name="flame" /> Mendesak</> : 'Pengaturan'}
@@ -354,7 +361,6 @@
               </div>
             )}
 
-            {/* Menu Filter Rentang Mendesak yang Diperbarui */}
             {view === 'urgent' && (
               <div className="flex overflow-x-auto gap-2 pb-2 pt-1 scrollbar-hide px-1">
                 {[
@@ -362,7 +368,7 @@
                   { label: '10 Jam', val: 10 * 3600 * 1000 },
                   { label: '1 Hari', val: 24 * 3600 * 1000 },
                   { label: '1 Minggu', val: 7 * 24 * 3600 * 1000 },
-                  { label: '2 Minggu++', val: 9999 * 24 * 3600 * 1000 } // Infinity epoch to grab all
+                  { label: '2 Minggu++', val: 9999 * 24 * 3600 * 1000 }
                 ].map(f => (
                   <button key={f.label} onClick={() => setUrgentFilter(f.val)} className={`px-4 py-2.5 rounded-[1.5rem] text-[11px] uppercase tracking-wider font-extrabold whitespace-nowrap transition-all border ${urgentFilter === f.val ? 'border-red-500 text-red-500 bg-red-500/15 shadow-[0_0_15px_rgba(239,68,68,0.2)]' : 'border-transparent bg-black/5 dark:bg-white/5 opacity-60 hover:opacity-100'}`}>
                     {f.label}
@@ -375,7 +381,7 @@
           <main className="flex-1 px-4 pt-5 pb-32 overflow-y-auto z-10 relative scroll-smooth">
             <AnimatePresence mode="wait">
               
-              {view === 'settings' && (
+              {view === 'settings' ? (
                 <motion.div key="route-settings" variants={pageVariants} initial="initial" animate="in" exit="out" className="space-y-5">
                   <div className="p-6 rounded-[2.5rem] glass-panel space-y-5 border border-black/5 dark:border-white/5">
                     <h3 className="text-[11px] font-extrabold opacity-40 tracking-widest uppercase">Pencahayaan Visual</h3>
@@ -410,9 +416,7 @@
                     </div>
                   </div>
                 </motion.div>
-              )}
-
-              {(view === 'tasks' || view === 'urgent') && (
+              ) : (
                 <motion.div key="route-tasks" variants={pageVariants} initial="initial" animate="in" exit="out" className="space-y-4">
                   {activeTasks.length === 0 && (
                     <div className="text-center mt-24 opacity-40 flex flex-col items-center">
@@ -439,7 +443,6 @@
                             <span className="flex items-center gap-1.5"><Icon name="plus" size={12} /> {formatIDDate(task.createdAt)}</span>
                             {task.dueDate && <span className="flex items-center gap-1.5"><Icon name="clock" size={12} /> {formatIDDate(task.dueDate)}</span>}
                             
-                            {/* Injeksi Hitung Mundur Real-time Khusus Mode Mendesak */}
                             {(view === 'urgent' && task.dueDate && !task.completed) && (
                               <CountdownInjector dueDate={task.dueDate} />
                             )}
@@ -458,7 +461,6 @@
             </AnimatePresence>
           </main>
 
-          {/* Floating Actions */}
           <AnimatePresence>
             {(view === 'tasks' || view === 'urgent') && (
               <motion.div initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 100, opacity: 0 }} className="absolute bottom-6 right-6 flex flex-col gap-4 z-40">
@@ -473,7 +475,6 @@
             )}
           </AnimatePresence>
 
-          {/* Dialog Verifikasi Penuh (Anti-Event Bubbling) */}
           <AnimatePresence>
             {confirmDialog && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-md px-6">
@@ -498,7 +499,6 @@
             )}
           </AnimatePresence>
 
-          {/* Modal Input CRUD Liquid Glass */}
           <AnimatePresence>
             {modalState.isOpen && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[60] flex items-end bg-black/70 backdrop-blur-md sm:items-center sm:justify-center">
@@ -506,7 +506,8 @@
                   <div className="w-16 h-1.5 bg-black/20 dark:bg-white/20 rounded-full mx-auto sm:hidden mb-2" />
                   <h2 className="text-2xl font-black mt-2 tracking-tight uppercase opacity-80">{modalState.mode === 'create' ? 'Modul Tugas Baru' : 'Revisi Entri'}</h2>
                   
-                  <input id="taskTitle" type="text" defaultValue={modalState.data?.title || ''} placeholder="Deskripsi ringkas..." className="w-full p-4 rounded-[1.5rem] text-lg font-bold border-none" autoFocus />
+                  {/* PENGHAPUSAN AUTOFOCUS UNTUK MENCEGAH BUG VISUAL VIEWPORT */}
+                  <input id="taskTitle" type="text" defaultValue={modalState.data?.title || ''} placeholder="Deskripsi ringkas..." className="w-full p-4 rounded-[1.5rem] text-lg font-bold border-none" />
                   <div className="space-y-2">
                     <label className="text-xs font-bold opacity-50 block uppercase tracking-widest pl-2">Titik Tenggat Absolut</label>
                     <input id="taskDate" type="datetime-local" defaultValue={modalState.data?.dueDate ? new Date(modalState.data.dueDate).toISOString().slice(0,16) : ''} className="w-full p-4 rounded-[1.5rem] border-none text-sm font-bold" />
@@ -537,7 +538,6 @@
       );
     }
 
-    // Komponen Terpisah untuk Hitung Mundur agar DOM utama tidak re-render tiap detik
     const CountdownInjector = ({ dueDate }) => {
       const countdown = useCountdown(dueDate);
       return (
