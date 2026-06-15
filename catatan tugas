@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, shrink-to-fit=no">
+  <meta name="theme-color" content="#0a0a0a">
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { darkMode: 'class', theme: { extend: { colors: { primary: 'var(--color-primary)' } } } }
+  </script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+  
+  <style>
+    :root { font-size: 16px; }
+    body { margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; overflow: hidden; background-color: var(--color-bg); }
+    ::-webkit-scrollbar { width: 0px; background: transparent; }
+    
+    /* Liquid Glass Engine: Blur tinggi, border melingkar, refraksi halus */
+    .glass-panel {
+      background: var(--color-glass);
+      backdrop-filter: blur(32px);
+      -webkit-backdrop-filter: blur(32px);
+      border: 1px solid var(--color-border);
+      box-shadow: 0 16px 40px -10px rgba(0,0,0,0.3), inset 0 2px 10px rgba(255,255,255,0.05);
+    }
+    
+    input, textarea, select { 
+      background: var(--color-input); 
+      color: var(--color-text); 
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+      border-radius: 1.5rem !important; /* Rounded inputs */
+    }
+    input:focus, textarea:focus { outline: 2px solid var(--color-primary); background: var(--color-input-focus); }
+    input::placeholder, textarea::placeholder { color: var(--color-text-muted); }
+    
+    @keyframes ping-radar { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(2); opacity: 0; } }
+    .animate-radar { animation: ping-radar 1.5s cubic-bezier(0, 0, 0.2, 1) infinite; }
+  </style>
+</head>
+<body class="text-gray-900 dark:text-gray-100 transition-colors duration-500">
+  <div id="root" class="max-w-md mx-auto w-full h-[100dvh] relative overflow-hidden shadow-2xl"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo, Component } = React;
+    const { motion, AnimatePresence } = window.Motion;
+
+    // --- 1. ERROR BOUNDARY ---
+    class ErrorBoundary extends Component {
+      constructor(props) { super(props); this.state = { hasError: false, errorInfo: null }; }
+      static getDerivedStateFromError(error) { return { hasError: true, errorInfo: error.toString() }; }
+      componentDidCatch(error, info) { console.error("FATAL UI CRASH:", error, info); }
+      render() {
+        if (this.state.hasError) {
+          return (
+            <div className="flex flex-col items-center justify-center h-full bg-red-900 text-white p-6 text-center z-50 rounded-[3rem]">
+              <Icon name="flame" size={64} className="mb-4 opacity-50" />
+              <h1 className="text-2xl font-black tracking-widest uppercase mb-2">Sistem Crash</h1>
+              <p className="text-sm opacity-70 mb-8 font-mono bg-black/20 p-4 rounded-[2rem] border border-white/10 break-all">{this.state.errorInfo}</p>
+              <button onClick={() => window.location.reload(true)} className="px-8 py-4 bg-white text-red-900 font-bold rounded-full shadow-2xl active:scale-95 transition-transform">MUAT ULANG APLIKASI</button>
+            </div>
+          );
+        }
+        return this.props.children;
+      }
+    }
+
+    // --- 2. ASSETS & UTILS ---
+    const Icon = ({ name, size=24, color="currentColor" }) => {
+      const icons = {
+        checkCircle: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>,
+        circle: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle></svg>,
+        trash: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>,
+        plus: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>,
+        settings: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>,
+        search: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>,
+        flame: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path></svg>,
+        moon: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>,
+        sun: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line></svg>,
+        mic: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>,
+        bell: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>,
+        clock: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>,
+        refresh: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+      };
+      return icons[name] || null;
+    };
+
+    const THEMES = { blue: '#3b82f6', orange: '#f97316', purple: '#8b5cf6', emerald: '#10b981', rose: '#f43f5e' };
+    const formatIDDate = (iso) => iso ? new Date(iso).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+    
+    // Engine Audio
+    let alarmContext = null;
+    let alarmInterval = null;
+    let isAlarmUnlocked = false;
+
+    const playBeep = () => {
+      try {
+        if (!alarmContext) alarmContext = new (window.AudioContext || window.webkitAudioContext)();
+        if (alarmContext.state === 'suspended') alarmContext.resume();
+        const osc = alarmContext.createOscillator(), gain = alarmContext.createGain();
+        osc.connect(gain); gain.connect(alarmContext.destination);
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(880, alarmContext.currentTime);
+        osc.frequency.setValueAtTime(1200, alarmContext.currentTime + 0.1);
+        gain.gain.setValueAtTime(0, alarmContext.currentTime);
+        gain.gain.linearRampToValueAtTime(0.3, alarmContext.currentTime + 0.05);
+        gain.gain.linearRampToValueAtTime(0, alarmContext.currentTime + 0.3);
+        osc.start(alarmContext.currentTime); osc.stop(alarmContext.currentTime + 0.3);
+      } catch(e) {}
+    };
+
+    const useCountdown = (dueDate) => {
+      const [timeLeft, setTimeLeft] = useState('');
+      useEffect(() => {
+        if (!dueDate) return;
+        const target = new Date(dueDate).getTime();
+        const update = () => {
+          const diff = target - Date.now();
+          if (diff <= 0) { setTimeLeft('Telah Berlalu'); return; }
+          const h = Math.floor(diff / (1000 * 60 * 60));
+          const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+          const s = Math.floor((diff % (1000 * 60)) / 1000);
+          setTimeLeft(`${h}j ${m}m ${s}s`);
+        };
+        update();
+        const id = setInterval(update, 1000);
+        return () => clearInterval(id);
+      }, [dueDate]);
+      return timeLeft;
+    };
+
+    const parseVoiceCommand = (text) => {
+      let draft = { title: text, notes: "Hasil rekaman suara.", dueDate: null };
+      const lower = text.toLowerCase();
+      const now = new Date();
+      let targetDate = new Date();
+      let timeSet = false;
+
+      if (lower.includes("besok")) { targetDate.setDate(now.getDate() + 1); timeSet = true; }
+      else if (lower.includes("lusa")) { targetDate.setDate(now.getDate() + 2); timeSet = true; }
+
+      const timeMatch = lower.match(/(?:jam|pukul)\s*(\d{1,2})(?:\s*(pagi|siang|sore|malam))?/);
+      if (timeMatch) {
+        let hour = parseInt(timeMatch[1]);
+        const modifier = timeMatch[2];
+        if (modifier === 'siang' || modifier === 'sore' || modifier === 'malam') { if (hour < 12) hour += 12; } 
+        else if (modifier === 'pagi' && hour === 12) { hour = 0; }
+        targetDate.setHours(hour, 0, 0, 0);
+        timeSet = true;
+      } else { targetDate.setHours(12, 0, 0, 0); }
+
+      if (timeSet) {
+        draft.dueDate = new Date(targetDate.getTime() - (targetDate.getTimezoneOffset() * 60000)).toISOString().slice(0,16);
+        draft.title = text.replace(/besok|lusa|(?:jam|pukul)\s*\d{1,2}(?:\s*(?:pagi|siang|sore|malam))?/gi, '').trim();
+        if(!draft.title) draft.title = "Tugas Baru";
+      }
+      return draft;
+    };
+
+    // --- 3. MAIN APPLICATION ---
+    function App() {
+      const [tasks, setTasks] = useState(() => {
+        try { const local = localStorage.getItem('tms_data_v7'); return local ? JSON.parse(local) : []; } 
+        catch(e) { return []; }
+      });
+
+      const [settings, setSettings] = useState(() => {
+        try { const sets = localStorage.getItem('tms_sets_v7'); return sets ? JSON.parse(sets) : { theme: 'orange', mode: 'dark', soundEnabled: true }; } 
+        catch(e) { return { theme: 'orange', mode: 'dark', soundEnabled: true }; }
+      });
+
+      const [view, setView] = useState('tasks');
+      const [activeTab, setActiveTab] = useState('Aktif');
+      const [searchQuery, setSearchQuery] = useState('');
+      const [urgentFilter, setUrgentFilter] = useState(10 * 3600 * 1000); // Default 10 Jam
+      
+      const [modalState, setModalState] = useState({ isOpen: false, mode: 'create', data: null });
+      const [confirmDialog, setConfirmDialog] = useState(null);
+      const [activeAlarmTask, setActiveAlarmTask] = useState(null);
+      const [isListening, setIsListening] = useState(false);
+
+      // Sinkronisasi Persistensi & Tema Dinamis
+      useEffect(() => {
+        localStorage.setItem('tms_data_v7', JSON.stringify(tasks));
+        localStorage.setItem('tms_sets_v7', JSON.stringify(settings));
+        
+        const root = document.documentElement;
+        if (settings.mode === 'dark') {
+          root.classList.add('dark');
+          root.style.setProperty('--color-bg', '#050505');
+          root.style.setProperty('--color-glass', 'rgba(20, 20, 20, 0.65)');
+          root.style.setProperty('--color-border', 'rgba(255, 255, 255, 0.08)');
+          root.style.setProperty('--color-input', 'rgba(0, 0, 0, 0.4)');
+          root.style.setProperty('--color-input-focus', 'rgba(0, 0, 0, 0.8)');
+          root.style.setProperty('--color-text', '#ffffff');
+          root.style.setProperty('--color-text-muted', 'rgba(255, 255, 255, 0.4)');
+        } else {
+          root.classList.remove('dark');
+          root.style.setProperty('--color-bg', '#f0f2f5');
+          root.style.setProperty('--color-glass', 'rgba(255, 255, 255, 0.7)');
+          root.style.setProperty('--color-border', 'rgba(0, 0, 0, 0.05)');
+          root.style.setProperty('--color-input', 'rgba(255, 255, 255, 0.6)');
+          root.style.setProperty('--color-input-focus', 'rgba(255, 255, 255, 1)');
+          root.style.setProperty('--color-text', '#111827');
+          root.style.setProperty('--color-text-muted', 'rgba(0, 0, 0, 0.5)');
+        }
+        root.style.setProperty('--color-primary', THEMES[settings.theme]);
+      }, [tasks, settings]);
+
+      // Unlock Audio & Alarm Tracker
+      useEffect(() => {
+        const unlockAudio = () => { if(!isAlarmUnlocked){ isAlarmUnlocked=true; if(!alarmContext) alarmContext = new (window.AudioContext || window.webkitAudioContext)(); } };
+        document.body.addEventListener('touchstart', unlockAudio, { once: true });
+        document.body.addEventListener('click', unlockAudio, { once: true });
+      }, []);
+
+      useEffect(() => {
+        const interval = setInterval(() => {
+          if (!settings.soundEnabled || activeAlarmTask) return;
+          const now = Date.now();
+          let triggeredTask = null;
+          setTasks(prev => {
+            let mutated = false;
+            const updated = prev.map(t => {
+              if (t.completed || !t.dueDate || t.notifiedExact) return t;
+              const diff = new Date(t.dueDate).getTime() - now;
+              if (diff <= 0 && diff > -120000) {
+                triggeredTask = t; mutated = true; return { ...t, notifiedExact: true };
+              }
+              return t;
+            });
+            return mutated ? updated : prev;
+          });
+          if (triggeredTask) {
+            setActiveAlarmTask(triggeredTask);
+            alarmInterval = setInterval(playBeep, 1000);
+          }
+        }, 5000);
+        return () => clearInterval(interval);
+      }, [settings.soundEnabled, activeAlarmTask]);
+
+      const stopAlarm = () => { clearInterval(alarmInterval); alarmInterval = null; setActiveAlarmTask(null); };
+
+      const handleVoiceInput = () => {
+        const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRec) { alert("Peramban Anda tidak mendukung Web Speech API."); return; }
+        const recognition = new SpeechRec();
+        recognition.lang = 'id-ID';
+        recognition.start();
+        setIsListening(true);
+        recognition.onresult = (event) => {
+          const transcript = event.results[0][0].transcript;
+          setIsListening(false);
+          setModalState({ isOpen: true, mode: 'create', data: parseVoiceCommand(transcript) });
+        };
+        recognition.onerror = () => setIsListening(false);
+        recognition.onend = () => setIsListening(false);
+      };
+
+      // Filter Data Resolusi Tinggi
+      const activeTasks = useMemo(() => {
+        const query = searchQuery.toLowerCase();
+        let source = tasks;
+
+        if (view === 'urgent') {
+          const now = Date.now();
+          source = tasks.filter(t => {
+            if (t.completed || !t.dueDate) return false;
+            const diff = new Date(t.dueDate).getTime() - now;
+            // Evaluasi rentang filter. Jika <= urgentFilter dan belum terlalu kadaluarsa (toleransi 1 hari).
+            return diff <= urgentFilter && diff > -86400000;
+          });
+        } else if (view === 'tasks') {
+          source = tasks.filter(t => {
+            if (activeTab === 'Selesai') return t.completed;
+            if (activeTab === 'Tertunda') return !t.completed && t.dueDate && new Date(t.dueDate).getTime() < Date.now();
+            return !t.completed; 
+          });
+        }
+
+        return source.filter(t => {
+          if (!query) return true;
+          const target = `${t.title} ${t.notes || ''} ${formatIDDate(t.createdAt)} ${formatIDDate(t.dueDate)}`.toLowerCase();
+          return target.includes(query);
+        }).sort((a,b) => new Date(a.dueDate||8640000000000000) - new Date(b.dueDate||8640000000000000));
+      }, [tasks, activeTab, searchQuery, view, urgentFilter]);
+
+      const forceRefresh = () => window.location.reload(true);
+
+      const pageVariants = {
+        initial: { opacity: 0, x: 30, filter: 'blur(12px)' },
+        in: { opacity: 1, x: 0, filter: 'blur(0px)' },
+        out: { opacity: 0, x: -30, filter: 'blur(12px)' }
+      };
+
+      return (
+        <div className="w-full h-full flex flex-col relative">
+          
+          <AnimatePresence>
+            {activeAlarmTask && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/90 backdrop-blur-xl px-6 text-center">
+                <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 0.8 }} className="w-24 h-24 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center mb-6">
+                  <Icon name="bell" size={48} />
+                </motion.div>
+                <h2 className="text-3xl font-black text-white tracking-widest mb-2 uppercase text-red-500">Batas Waktu</h2>
+                <p className="text-xl font-bold text-white mb-10">"{activeAlarmTask.title}"</p>
+                <button onClick={stopAlarm} className="px-10 py-5 rounded-[2rem] bg-red-600 text-white font-black text-lg tracking-widest shadow-[0_0_40px_rgba(220,38,38,0.6)] active:scale-95 transition-transform">
+                  MATIKAN ALARM
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Ambient Liquid Orbs */}
+          <div className="absolute top-[-10%] left-[-20%] w-[80%] h-[50%] rounded-[50%] opacity-15 blur-[120px] pointer-events-none transition-colors duration-1000" style={{ backgroundColor: 'var(--color-primary)' }}></div>
+          <div className="absolute bottom-[-10%] right-[-20%] w-[60%] h-[40%] rounded-[50%] opacity-10 blur-[100px] pointer-events-none transition-colors duration-1000" style={{ backgroundColor: 'var(--color-primary)' }}></div>
+
+          <header className="px-5 pt-10 pb-5 z-30 glass-panel rounded-b-[2.5rem] flex flex-col gap-4 relative border-t-0 border-x-0">
+            <div className="flex justify-between items-center">
+              <h1 className="text-2xl font-extrabold tracking-tight flex items-center gap-2" style={{ color: 'var(--color-primary)' }}>
+                {view === 'tasks' ? 'Daftar Tugas' : view === 'urgent' ? <><Icon name="flame" /> Mendesak</> : 'Pengaturan'}
+              </h1>
+
+              <div className="flex gap-2">
+                <button onClick={forceRefresh} className="p-2 rounded-full bg-black/5 dark:bg-white/5 active:rotate-180 transition-all duration-500 border border-white/5">
+                  <Icon name="refresh" size={20} />
+                </button>
+                <div className="flex gap-1 bg-black/5 dark:bg-white/5 p-1 rounded-full border border-black/5 dark:border-white/5">
+                  <button onClick={() => setView('tasks')} className={`p-2 rounded-full transition-all ${view==='tasks'?'bg-white dark:bg-black shadow-lg':''}`} style={{ color: view==='tasks'?'var(--color-primary)':'' }}><Icon name="checkCircle" size={18}/></button>
+                  <button onClick={() => setView('urgent')} className={`p-2 rounded-full transition-all ${view==='urgent'?'bg-white dark:bg-black shadow-lg text-red-500':''}`}><Icon name="flame" size={18}/></button>
+                  <button onClick={() => setView('settings')} className={`p-2 rounded-full transition-all ${view==='settings'?'bg-white dark:bg-black shadow-lg':''}`} style={{ color: view==='settings'?'var(--color-primary)':'' }}><Icon name="settings" size={18}/></button>
+                </div>
+              </div>
+            </div>
+
+            {(view === 'tasks' || view === 'urgent') && (
+              <div className="relative w-full">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 opacity-50"><Icon name="search" size={18} /></div>
+                <input type="text" placeholder="Cari konteks atau tanggal..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="w-full py-3.5 pl-11 pr-5 rounded-[2rem] text-sm font-medium border-none shadow-inner" />
+              </div>
+            )}
+
+            {view === 'tasks' && (
+              <div className="flex rounded-[2rem] p-1.5 bg-black/10 dark:bg-black/30 border border-black/5 dark:border-white/5 relative z-10 shadow-inner">
+                {['Aktif', 'Tertunda', 'Selesai'].map(t => (
+                  <button key={t} onClick={() => setActiveTab(t)} className="flex-1 py-2 text-[13px] font-bold relative z-10 transition-colors" style={{ color: activeTab === t ? '#fff' : 'var(--color-text-muted)' }}>
+                    {activeTab === t && <motion.div layoutId="tabMarker" className="absolute inset-0 rounded-[1.5rem] shadow-md -z-10" style={{ backgroundColor: 'var(--color-primary)' }} transition={{ type: "spring", bounce: 0.2 }} />}
+                    {t}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Menu Filter Rentang Mendesak yang Diperbarui */}
+            {view === 'urgent' && (
+              <div className="flex overflow-x-auto gap-2 pb-2 pt-1 scrollbar-hide px-1">
+                {[
+                  { label: '1 Jam', val: 3600 * 1000 },
+                  { label: '10 Jam', val: 10 * 3600 * 1000 },
+                  { label: '1 Hari', val: 24 * 3600 * 1000 },
+                  { label: '1 Minggu', val: 7 * 24 * 3600 * 1000 },
+                  { label: '2 Minggu++', val: 9999 * 24 * 3600 * 1000 } // Infinity epoch to grab all
+                ].map(f => (
+                  <button key={f.label} onClick={() => setUrgentFilter(f.val)} className={`px-4 py-2.5 rounded-[1.5rem] text-[11px] uppercase tracking-wider font-extrabold whitespace-nowrap transition-all border ${urgentFilter === f.val ? 'border-red-500 text-red-500 bg-red-500/15 shadow-[0_0_15px_rgba(239,68,68,0.2)]' : 'border-transparent bg-black/5 dark:bg-white/5 opacity-60 hover:opacity-100'}`}>
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </header>
+
+          <main className="flex-1 px-4 pt-5 pb-32 overflow-y-auto z-10 relative scroll-smooth">
+            <AnimatePresence mode="wait">
+              
+              {view === 'settings' && (
+                <motion.div key="route-settings" variants={pageVariants} initial="initial" animate="in" exit="out" className="space-y-5">
+                  <div className="p-6 rounded-[2.5rem] glass-panel space-y-5 border border-black/5 dark:border-white/5">
+                    <h3 className="text-[11px] font-extrabold opacity-40 tracking-widest uppercase">Pencahayaan Visual</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <button onClick={()=>setSettings(s=>({...s, mode:'light'}))} className={`p-4 rounded-[2rem] flex flex-col items-center gap-2 border-2 transition-all ${settings.mode==='light'?'border-[var(--color-primary)] text-[var(--color-primary)] bg-primary/5 shadow-md':'border-transparent bg-black/5 dark:bg-white/5 opacity-60'}`}>
+                        <Icon name="sun" size={28}/> <span className="text-xs font-bold">Terang</span>
+                      </button>
+                      <button onClick={()=>setSettings(s=>({...s, mode:'dark'}))} className={`p-4 rounded-[2rem] flex flex-col items-center gap-2 border-2 transition-all ${settings.mode==='dark'?'border-[var(--color-primary)] text-[var(--color-primary)] bg-primary/5 shadow-md':'border-transparent bg-black/5 dark:bg-white/5 opacity-60'}`}>
+                        <Icon name="moon" size={28}/> <span className="text-xs font-bold">Gelap</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="p-6 rounded-[2.5rem] glass-panel space-y-4 border border-black/5 dark:border-white/5">
+                    <h3 className="text-[11px] font-extrabold opacity-40 tracking-widest uppercase">Spektrum Liquid Kaca</h3>
+                    <div className="flex justify-between px-2">
+                      {Object.keys(THEMES).map(k => (
+                        <button key={k} onClick={() => setSettings(s=>({...s, theme: k}))} className="w-12 h-12 rounded-full border-2 transition-transform active:scale-90 flex items-center justify-center shadow-lg" style={{ backgroundColor: THEMES[k], borderColor: settings.theme === k ? 'var(--color-text)' : 'transparent' }}>
+                          {settings.theme === k && <Icon name="checkCircle" size={20} color="#fff" />}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="p-6 rounded-[2.5rem] glass-panel space-y-4 border border-black/5 dark:border-white/5">
+                    <h3 className="text-[11px] font-extrabold opacity-40 tracking-widest uppercase">Mesin Audio Peringatan</h3>
+                    <div className="flex justify-between items-center px-1">
+                      <span className="font-bold text-sm">Persisten Loop Alarm</span>
+                      <button onClick={() => setSettings(s => ({...s, soundEnabled: !s.soundEnabled}))} className={`w-14 h-8 rounded-full p-1 transition-colors ${settings.soundEnabled ? 'bg-primary shadow-[0_0_15px_var(--color-primary)]' : 'bg-gray-400 dark:bg-white/20'}`} style={{ backgroundColor: settings.soundEnabled ? 'var(--color-primary)' : '' }}>
+                        <motion.div layout className="w-6 h-6 bg-white rounded-full shadow-sm" style={{ marginLeft: settings.soundEnabled ? '24px' : '0px' }} />
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {(view === 'tasks' || view === 'urgent') && (
+                <motion.div key="route-tasks" variants={pageVariants} initial="initial" animate="in" exit="out" className="space-y-4">
+                  {activeTasks.length === 0 && (
+                    <div className="text-center mt-24 opacity-40 flex flex-col items-center">
+                      <Icon name="checkCircle" size={56} className="mb-4" />
+                      <p className="text-sm font-bold tracking-wide">Layar bersih. Tidak ada tugas.</p>
+                    </div>
+                  )}
+                  
+                  <AnimatePresence>
+                    {activeTasks.map(task => (
+                      <motion.div layout key={task.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9, x: -50 }} className="p-5 rounded-[2.5rem] flex items-start gap-4 glass-panel border border-black/5 dark:border-white/5 relative z-10 group hover:shadow-2xl transition-shadow">
+                        <button onClick={(e) => { 
+                          e.stopPropagation();
+                          setConfirmDialog({ id: task.id, action: task.completed ? 'uncomplete' : 'complete', msg: task.completed ? 'Kembalikan tugas ke daftar aktif?' : 'Tandai tugas ini selesai murni?' });
+                        }} className="mt-1 shrink-0 active:scale-75 transition-transform">
+                          <Icon name={task.completed ? 'checkCircle' : 'circle'} color={task.completed ? 'var(--color-primary)' : 'var(--color-text-muted)'} size={30} />
+                        </button>
+                        
+                        <div className={`flex-1 min-w-0 pt-0.5 ${task.completed ? 'opacity-40' : ''}`}>
+                          <h3 className={`font-bold text-base leading-tight ${task.completed ? 'line-through' : ''}`}>{task.title}</h3>
+                          {task.notes && <p className="text-[13px] opacity-70 mt-1.5 line-clamp-2">{task.notes}</p>}
+                          
+                          <div className="mt-4 flex flex-col gap-2 pt-3 border-t border-black/5 dark:border-white/10 text-[11px] font-bold opacity-80">
+                            <span className="flex items-center gap-1.5"><Icon name="plus" size={12} /> {formatIDDate(task.createdAt)}</span>
+                            {task.dueDate && <span className="flex items-center gap-1.5"><Icon name="clock" size={12} /> {formatIDDate(task.dueDate)}</span>}
+                            
+                            {/* Injeksi Hitung Mundur Real-time Khusus Mode Mendesak */}
+                            {(view === 'urgent' && task.dueDate && !task.completed) && (
+                              <CountdownInjector dueDate={task.dueDate} />
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col gap-2 shrink-0">
+                          <button onClick={(e) => { e.stopPropagation(); setModalState({ isOpen: true, mode: 'edit', data: task }); }} className="p-3 opacity-40 hover:opacity-100 text-blue-500 transition-colors bg-blue-500/10 rounded-full z-20 relative"><Icon name="settings" size={20} /></button>
+                          <button onClick={(e) => { e.stopPropagation(); setTasks(p => p.filter(t => t.id !== task.id)); }} className="p-3 opacity-40 hover:opacity-100 text-red-500 transition-colors bg-red-500/10 rounded-full z-20 relative"><Icon name="trash" size={20} /></button>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </main>
+
+          {/* Floating Actions */}
+          <AnimatePresence>
+            {(view === 'tasks' || view === 'urgent') && (
+              <motion.div initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 100, opacity: 0 }} className="absolute bottom-6 right-6 flex flex-col gap-4 z-40">
+                <button onClick={handleVoiceInput} className="p-4 rounded-full shadow-lg transition-transform glass-panel relative border border-white/10" style={{ color: 'var(--color-primary)' }}>
+                  {isListening && <span className="absolute inset-0 rounded-full animate-radar bg-primary/50" style={{ backgroundColor: 'var(--color-primary)' }}></span>}
+                  <Icon name="mic" size={24} />
+                </button>
+                <button onClick={() => setModalState({ isOpen: true, mode: 'create', data: null })} className="p-5 rounded-full shadow-[0_10px_30px_rgba(0,0,0,0.4)] active:scale-90 transition-transform text-white border border-white/20" style={{ backgroundColor: 'var(--color-primary)' }}>
+                  <Icon name="plus" size={32} />
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Dialog Verifikasi Penuh (Anti-Event Bubbling) */}
+          <AnimatePresence>
+            {confirmDialog && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-md px-6">
+                <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="w-full max-w-sm p-8 rounded-[3rem] glass-panel shadow-2xl flex flex-col items-center text-center border border-white/10">
+                  <div className="w-20 h-20 rounded-full flex items-center justify-center mb-5 bg-primary/20 shadow-inner" style={{ color: 'var(--color-primary)' }}>
+                    <Icon name="checkCircle" size={40} />
+                  </div>
+                  <h3 className="text-xl font-bold mb-3">Verifikasi Tindakan</h3>
+                  <p className="text-sm opacity-70 mb-8 px-2">{confirmDialog.msg}</p>
+                  <div className="flex gap-3 w-full">
+                    <button onClick={() => setConfirmDialog(null)} className="flex-1 py-4 rounded-[1.5rem] bg-black/20 dark:bg-white/10 font-bold text-sm hover:bg-black/30 dark:hover:bg-white/20 transition-colors">Batal</button>
+                    <button onClick={() => {
+                      const isComplete = confirmDialog.action === 'complete';
+                      setTasks(p => p.map(t => t.id === confirmDialog.id ? {...t, completed: isComplete} : t));
+                      setConfirmDialog(null);
+                    }} className="flex-1 py-4 rounded-[1.5rem] font-bold text-sm text-white shadow-xl active:scale-95 transition-transform" style={{ backgroundColor: 'var(--color-primary)' }}>
+                      Lanjutkan
+                    </button>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Modal Input CRUD Liquid Glass */}
+          <AnimatePresence>
+            {modalState.isOpen && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[60] flex items-end bg-black/70 backdrop-blur-md sm:items-center sm:justify-center">
+                <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', damping: 25, stiffness: 300 }} className="w-full max-w-md p-6 sm:p-8 glass-panel rounded-t-[3rem] sm:rounded-[3rem] border-b-0 sm:border flex flex-col gap-5 max-h-[95vh] overflow-y-auto shadow-[0_-20px_60px_rgba(0,0,0,0.5)]">
+                  <div className="w-16 h-1.5 bg-black/20 dark:bg-white/20 rounded-full mx-auto sm:hidden mb-2" />
+                  <h2 className="text-2xl font-black mt-2 tracking-tight uppercase opacity-80">{modalState.mode === 'create' ? 'Modul Tugas Baru' : 'Revisi Entri'}</h2>
+                  
+                  <input id="taskTitle" type="text" defaultValue={modalState.data?.title || ''} placeholder="Deskripsi ringkas..." className="w-full p-4 rounded-[1.5rem] text-lg font-bold border-none" autoFocus />
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold opacity-50 block uppercase tracking-widest pl-2">Titik Tenggat Absolut</label>
+                    <input id="taskDate" type="datetime-local" defaultValue={modalState.data?.dueDate ? new Date(modalState.data.dueDate).toISOString().slice(0,16) : ''} className="w-full p-4 rounded-[1.5rem] border-none text-sm font-bold" />
+                  </div>
+                  <textarea id="taskNotes" defaultValue={modalState.data?.notes || ''} placeholder="Parameter tambahan..." className="w-full p-5 rounded-[1.5rem] border-none min-h-[140px] resize-none text-sm font-medium leading-relaxed"></textarea>
+                  
+                  <div className="flex gap-3 pt-5 mt-auto">
+                    <button onClick={() => setModalState({isOpen:false})} className="flex-1 py-4 rounded-[1.5rem] bg-black/5 dark:bg-white/10 font-bold text-sm border border-black/5 dark:border-white/5 active:scale-95 transition-transform">Abaikan</button>
+                    <button onClick={() => {
+                      const title = document.getElementById('taskTitle').value;
+                      if (!title.trim()) return;
+                      const dateVal = document.getElementById('taskDate').value;
+                      const payload = { title, notes: document.getElementById('taskNotes').value, dueDate: dateVal ? new Date(dateVal).toISOString() : null };
+                      
+                      if (modalState.mode === 'create') {
+                        setTasks(p => [...p, { id: Date.now().toString(), createdAt: new Date().toISOString(), completed: false, ...payload }]);
+                      } else {
+                        setTasks(p => p.map(t => t.id === modalState.data.id ? { ...t, ...payload } : t));
+                      }
+                      setModalState({isOpen:false});
+                    }} className="flex-1 py-4 rounded-[1.5rem] font-bold text-white shadow-xl text-sm active:scale-95 transition-transform border border-white/20" style={{ backgroundColor: 'var(--color-primary)' }}>Eksekusi Simpan</button>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      );
+    }
+
+    // Komponen Terpisah untuk Hitung Mundur agar DOM utama tidak re-render tiap detik
+    const CountdownInjector = ({ dueDate }) => {
+      const countdown = useCountdown(dueDate);
+      return (
+        <span className="inline-block mt-2 px-3 py-1.5 rounded-[1rem] bg-red-500/15 text-red-500 font-black tracking-widest uppercase border border-red-500/20 w-fit shadow-sm">
+          Sisa: {countdown}
+        </span>
+      );
+    };
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<ErrorBoundary><App /></ErrorBoundary>);
+  </script>
+</body>
+</html>
