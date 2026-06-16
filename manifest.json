@@ -1,6 +1,6 @@
 {
   "name": "Task Manager PWA",
-  "short_name": "Tasks",
+  "short_name": "Catatan Deadline",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#0a0a0a",
