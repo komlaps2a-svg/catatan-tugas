@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, shrink-to-fit=no">
-  <meta name="theme-color" content="#0a0a0a">
+  <meta name="theme-color" content="#030303">
+  <title>Catatan Tugas & Belanja</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="./icon-192.png">
   
@@ -18,15 +19,27 @@
   
   <style>
     :root { font-size: 16px; }
-    body { margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; overflow: hidden; background-color: var(--color-bg); }
+    body { 
+      margin: 0; padding: 0; 
+      -webkit-tap-highlight-color: transparent; 
+      overflow: hidden; 
+      background: var(--color-bg);
+      background-image: var(--color-gradient);
+    }
     ::-webkit-scrollbar { width: 0px; background: transparent; }
     
     .glass-panel {
       background: var(--color-glass);
-      backdrop-filter: blur(32px);
-      -webkit-backdrop-filter: blur(32px);
+      backdrop-filter: blur(40px);
+      -webkit-backdrop-filter: blur(40px);
       border: 1px solid var(--color-border);
-      box-shadow: 0 16px 40px -10px rgba(0,0,0,0.3), inset 0 2px 10px rgba(255,255,255,0.05);
+      box-shadow: 0 20px 50px -10px rgba(0,0,0,0.4), inset 0 1px 1px rgba(255,255,255,0.05);
+    }
+
+    .solid-panel {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      box-shadow: 0 20px 50px -10px rgba(0,0,0,0.3);
     }
     
     input, textarea, select { 
@@ -34,33 +47,39 @@
       color: var(--color-text); 
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
       border-radius: 1.5rem !important;
+      appearance: none;
     }
-    input:focus, textarea:focus { outline: 2px solid var(--color-primary); background: var(--color-input-focus); }
+    input:focus, textarea:focus, select:focus { outline: 2px solid var(--color-primary); background: var(--color-input-focus); box-shadow: 0 0 20px rgba(var(--color-primary), 0.1); }
     input::placeholder, textarea::placeholder { color: var(--color-text-muted); }
     
-    @keyframes ping-radar { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(2); opacity: 0; } }
+    @keyframes ping-radar { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(2.5); opacity: 0; } }
     .animate-radar { animation: ping-radar 1.5s cubic-bezier(0, 0, 0.2, 1) infinite; }
   </style>
 </head>
-<body class="text-gray-900 dark:text-gray-100 transition-colors duration-500">
+<body class="text-gray-900 dark:text-gray-100 transition-all duration-700">
   <div id="root" class="max-w-md mx-auto w-full h-[100dvh] relative overflow-hidden shadow-2xl"></div>
 
   <script type="text/babel">
-    const { useState, useEffect, useMemo, Component } = React;
+    const { useState, useEffect, useMemo, Component, useRef } = React;
     const { motion, AnimatePresence } = window.Motion;
 
     class ErrorBoundary extends Component {
       constructor(props) { super(props); this.state = { hasError: false, errorInfo: null }; }
       static getDerivedStateFromError(error) { return { hasError: true, errorInfo: error.toString() }; }
-      componentDidCatch(error, info) { console.error("FATAL UI CRASH:", error, info); }
+      componentDidCatch(error, info) { 
+        // WHY: JSON logging memudahkan observabilitas fatal UI crash di sisi client
+        console.error(JSON.stringify({ what: "FATAL UI CRASH", where: "ErrorBoundary", why: error.message, stack: info })); 
+      }
       render() {
         if (this.state.hasError) {
           return (
-            <div className="flex flex-col items-center justify-center h-full bg-red-900 text-white p-6 text-center z-50 rounded-[3rem]">
-              <Icon name="flame" size={64} className="mb-4 opacity-50" />
-              <h1 className="text-2xl font-black tracking-widest uppercase mb-2">Sistem Crash</h1>
-              <p className="text-sm opacity-70 mb-8 font-mono bg-black/20 p-4 rounded-[2rem] border border-white/10 break-all">{this.state.errorInfo}</p>
-              <button onClick={() => window.location.reload(true)} className="px-8 py-4 bg-white text-red-900 font-bold rounded-full shadow-2xl active:scale-95 transition-transform">MUAT ULANG APLIKASI</button>
+            <div className="flex flex-col items-center justify-center h-full bg-[#050000] text-red-400 p-6 text-center z-50">
+              <Icon name="flame" size={80} className="mb-6 opacity-50 text-red-600" />
+              <h1 className="text-3xl font-black tracking-widest uppercase mb-3">Sistem Anomali</h1>
+              <p className="text-sm opacity-70 mb-10 font-mono bg-red-950/30 p-6 rounded-[2rem] border border-red-500/20 break-all">{this.state.errorInfo}</p>
+              <button onClick={() => window.location.reload(true)} className="px-10 py-5 bg-red-600 text-white font-bold rounded-[2rem] shadow-[0_0_30px_rgba(220,38,38,0.3)] active:scale-95 transition-transform text-lg tracking-widest">
+                MUAT ULANG SISTEM
+              </button>
             </div>
           );
         }
@@ -68,7 +87,7 @@
       }
     }
 
-    const Icon = ({ name, size=24, color="currentColor", className="" }) => {
+    const Icon = ({ name, size=28, color="currentColor", className="" }) => {
       const icons = {
         checkCircle: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>,
         circle: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"></circle></svg>,
@@ -82,32 +101,31 @@
         mic: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>,
         bell: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>,
         clock: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>,
-        refresh: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+        refresh: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>,
+        pin: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="12" y1="17" x2="12" y2="22"></line><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"></path></svg>,
+        snooze: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"></circle><polyline points="12 8 12 12 14 14"></polyline><path d="M16 8h-4v4"></path></svg>,
+        sweep: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>,
+        shopping: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
       };
       return icons[name] || null;
     };
 
     const THEMES = { blue: '#3b82f6', orange: '#f97316', purple: '#8b5cf6', emerald: '#10b981', rose: '#f43f5e' };
+    
+    const CATEGORIES = {
+      'Lainnya': { color: '#64748b' },
+      'Akademik': { color: '#3b82f6' },
+      'Pekerjaan': { color: '#10b981' },
+      'Pribadi': { color: '#f43f5e' }
+    };
+
     const formatIDDate = (iso) => iso ? new Date(iso).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
     
-    let alarmContext = null;
-    let alarmInterval = null;
-    let isAlarmUnlocked = false;
-
-    const playBeep = () => {
-      try {
-        if (!alarmContext) alarmContext = new (window.AudioContext || window.webkitAudioContext)();
-        if (alarmContext.state === 'suspended') alarmContext.resume();
-        const osc = alarmContext.createOscillator(), gain = alarmContext.createGain();
-        osc.connect(gain); gain.connect(alarmContext.destination);
-        osc.type = 'square';
-        osc.frequency.setValueAtTime(880, alarmContext.currentTime);
-        osc.frequency.setValueAtTime(1200, alarmContext.currentTime + 0.1);
-        gain.gain.setValueAtTime(0, alarmContext.currentTime);
-        gain.gain.linearRampToValueAtTime(0.3, alarmContext.currentTime + 0.05);
-        gain.gain.linearRampToValueAtTime(0, alarmContext.currentTime + 0.3);
-        osc.start(alarmContext.currentTime); osc.stop(alarmContext.currentTime + 0.3);
-      } catch(e) {}
+    const renderFormattedNotes = (text) => {
+      if (!text) return null;
+      return text.split('\n').map((line, index, arr) => (
+        <span key={index}>{line}{index < arr.length - 1 ? ',' : ''}{index < arr.length - 1 && <br />}</span>
+      ));
     };
 
     const useCountdown = (dueDate) => {
@@ -130,414 +148,6 @@
       return timeLeft;
     };
 
-    const parseVoiceCommand = (text) => {
-      let draft = { title: text, notes: "Hasil rekaman suara.", dueDate: null };
-      const lower = text.toLowerCase();
-      const now = new Date();
-      let targetDate = new Date();
-      let timeSet = false;
-
-      if (lower.includes("besok")) { targetDate.setDate(now.getDate() + 1); timeSet = true; }
-      else if (lower.includes("lusa")) { targetDate.setDate(now.getDate() + 2); timeSet = true; }
-
-      const timeMatch = lower.match(/(?:jam|pukul)\s*(\d{1,2})(?:\s*(pagi|siang|sore|malam))?/);
-      if (timeMatch) {
-        let hour = parseInt(timeMatch[1]);
-        const modifier = timeMatch[2];
-        if (modifier === 'siang' || modifier === 'sore' || modifier === 'malam') { if (hour < 12) hour += 12; } 
-        else if (modifier === 'pagi' && hour === 12) { hour = 0; }
-        targetDate.setHours(hour, 0, 0, 0);
-        timeSet = true;
-      } else { targetDate.setHours(12, 0, 0, 0); }
-
-      if (timeSet) {
-        draft.dueDate = new Date(targetDate.getTime() - (targetDate.getTimezoneOffset() * 60000)).toISOString().slice(0,16);
-        draft.title = text.replace(/besok|lusa|(?:jam|pukul)\s*\d{1,2}(?:\s*(?:pagi|siang|sore|malam))?/gi, '').trim();
-        if(!draft.title) draft.title = "Tugas Baru";
-      }
-      return draft;
-    };
-
-    function App() {
-      const [tasks, setTasks] = useState(() => {
-        try { const local = localStorage.getItem('tms_data_v7'); return local ? JSON.parse(local) : []; } 
-        catch(e) { return []; }
-      });
-
-      const [settings, setSettings] = useState(() => {
-        try { const sets = localStorage.getItem('tms_sets_v7'); return sets ? JSON.parse(sets) : { theme: 'orange', mode: 'dark', soundEnabled: true }; } 
-        catch(e) { return { theme: 'orange', mode: 'dark', soundEnabled: true }; }
-      });
-
-      const [view, setView] = useState('tasks');
-      const [activeTab, setActiveTab] = useState('Aktif');
-      const [searchQuery, setSearchQuery] = useState('');
-      const [urgentFilter, setUrgentFilter] = useState(10 * 3600 * 1000); 
-      
-      const [modalState, setModalState] = useState({ isOpen: false, mode: 'create', data: null });
-      const [confirmDialog, setConfirmDialog] = useState(null);
-      const [activeAlarmTask, setActiveAlarmTask] = useState(null);
-      const [isListening, setIsListening] = useState(false);
-
-      // Injeksi Sinkronisasi CSS
-      useEffect(() => {
-        localStorage.setItem('tms_data_v7', JSON.stringify(tasks));
-        localStorage.setItem('tms_sets_v7', JSON.stringify(settings));
-        
-        const root = document.documentElement;
-        if (settings.mode === 'dark') {
-          root.classList.add('dark');
-          root.style.setProperty('--color-bg', '#050505');
-          root.style.setProperty('--color-glass', 'rgba(20, 20, 20, 0.65)');
-          root.style.setProperty('--color-border', 'rgba(255, 255, 255, 0.08)');
-          root.style.setProperty('--color-input', 'rgba(0, 0, 0, 0.4)');
-          root.style.setProperty('--color-input-focus', 'rgba(0, 0, 0, 0.8)');
-          root.style.setProperty('--color-text', '#ffffff');
-          root.style.setProperty('--color-text-muted', 'rgba(255, 255, 255, 0.4)');
-        } else {
-          root.classList.remove('dark');
-          root.style.setProperty('--color-bg', '#f0f2f5');
-          root.style.setProperty('--color-glass', 'rgba(255, 255, 255, 0.7)');
-          root.style.setProperty('--color-border', 'rgba(0, 0, 0, 0.05)');
-          root.style.setProperty('--color-input', 'rgba(255, 255, 255, 0.6)');
-          root.style.setProperty('--color-input-focus', 'rgba(255, 255, 255, 1)');
-          root.style.setProperty('--color-text', '#111827');
-          root.style.setProperty('--color-text-muted', 'rgba(0, 0, 0, 0.5)');
-        }
-        root.style.setProperty('--color-primary', THEMES[settings.theme]);
-      }, [tasks, settings]);
-
-      // Viewport Healing Observer (Perbaikan Sentral)
-      useEffect(() => {
-        if (!modalState.isOpen && !confirmDialog) {
-          // Jeda eksekusi untuk memastikan keyboard sepenuhnya terdisosiasi dari rendering engine
-          setTimeout(() => {
-            window.scrollTo(0, 0);
-            document.body.scrollTop = 0;
-            document.documentElement.scrollTop = 0;
-          }, 50);
-        }
-      }, [modalState.isOpen, confirmDialog]);
-
-      useEffect(() => {
-        const unlockAudio = () => { if(!isAlarmUnlocked){ isAlarmUnlocked=true; if(!alarmContext) alarmContext = new (window.AudioContext || window.webkitAudioContext)(); } };
-        document.body.addEventListener('touchstart', unlockAudio, { once: true });
-        document.body.addEventListener('click', unlockAudio, { once: true });
-      }, []);
-
-      useEffect(() => {
-        const interval = setInterval(() => {
-          if (!settings.soundEnabled || activeAlarmTask) return;
-          const now = Date.now();
-          let triggeredTask = null;
-          setTasks(prev => {
-            let mutated = false;
-            const updated = prev.map(t => {
-              if (t.completed || !t.dueDate || t.notifiedExact) return t;
-              const diff = new Date(t.dueDate).getTime() - now;
-              if (diff <= 0 && diff > -120000) {
-                triggeredTask = t; mutated = true; return { ...t, notifiedExact: true };
-              }
-              return t;
-            });
-            return mutated ? updated : prev;
-          });
-          if (triggeredTask) {
-            setActiveAlarmTask(triggeredTask);
-            alarmInterval = setInterval(playBeep, 1000);
-          }
-        }, 5000);
-        return () => clearInterval(interval);
-      }, [settings.soundEnabled, activeAlarmTask]);
-
-      const stopAlarm = () => { clearInterval(alarmInterval); alarmInterval = null; setActiveAlarmTask(null); };
-
-      const handleVoiceInput = () => {
-        const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SpeechRec) { alert("Sistem operasi menolak akses instrumen mikrofon pada ekosistem luring."); return; }
-        const recognition = new SpeechRec();
-        recognition.lang = 'id-ID';
-        recognition.start();
-        setIsListening(true);
-        recognition.onresult = (event) => {
-          const transcript = event.results[0][0].transcript;
-          setIsListening(false);
-          setModalState({ isOpen: true, mode: 'create', data: parseVoiceCommand(transcript) });
-        };
-        recognition.onerror = () => setIsListening(false);
-        recognition.onend = () => setIsListening(false);
-      };
-
-      const activeTasks = useMemo(() => {
-        const query = searchQuery.toLowerCase();
-        let source = tasks;
-
-        if (view === 'urgent') {
-          const now = Date.now();
-          source = tasks.filter(t => {
-            if (t.completed || !t.dueDate) return false;
-            const diff = new Date(t.dueDate).getTime() - now;
-            return diff <= urgentFilter && diff > -86400000;
-          });
-        } else if (view === 'tasks') {
-          source = tasks.filter(t => {
-            if (activeTab === 'Selesai') return t.completed;
-            if (activeTab === 'Tertunda') return !t.completed && t.dueDate && new Date(t.dueDate).getTime() < Date.now();
-            return !t.completed; 
-          });
-        }
-
-        return source.filter(t => {
-          if (!query) return true;
-          const target = `${t.title} ${t.notes || ''} ${formatIDDate(t.createdAt)} ${formatIDDate(t.dueDate)}`.toLowerCase();
-          return target.includes(query);
-        }).sort((a,b) => new Date(a.dueDate||8640000000000000) - new Date(b.dueDate||8640000000000000));
-      }, [tasks, activeTab, searchQuery, view, urgentFilter]);
-
-      const forceRefresh = () => window.location.reload(true);
-
-      const pageVariants = {
-        initial: { opacity: 0, x: 30, filter: 'blur(12px)' },
-        in: { opacity: 1, x: 0, filter: 'blur(0px)' },
-        out: { opacity: 0, x: -30, filter: 'blur(12px)' }
-      };
-
-      return (
-        <div className="w-full h-full flex flex-col relative overflow-hidden">
-          
-          <AnimatePresence>
-            {activeAlarmTask && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/90 backdrop-blur-xl px-6 text-center">
-                <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 0.8 }} className="w-24 h-24 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center mb-6">
-                  <Icon name="bell" size={48} />
-                </motion.div>
-                <h2 className="text-3xl font-black text-white tracking-widest mb-2 uppercase text-red-500">Batas Waktu</h2>
-                <p className="text-xl font-bold text-white mb-10">"{activeAlarmTask.title}"</p>
-                <button onClick={stopAlarm} className="px-10 py-5 rounded-[2rem] bg-red-600 text-white font-black text-lg tracking-widest shadow-[0_0_40px_rgba(220,38,38,0.6)] active:scale-95 transition-transform">
-                  MATIKAN ALARM
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Ambient Render */}
-          <div className="absolute top-[-10%] left-[-20%] w-[80%] h-[50%] rounded-[50%] opacity-15 blur-[120px] pointer-events-none transition-colors duration-1000" style={{ backgroundColor: 'var(--color-primary)' }}></div>
-          <div className="absolute bottom-[-10%] right-[-20%] w-[60%] h-[40%] rounded-[50%] opacity-10 blur-[100px] pointer-events-none transition-colors duration-1000" style={{ backgroundColor: 'var(--color-primary)' }}></div>
-
-          {/* Penguncian Dimensi shrink-0 pada Header */}
-          <header className="shrink-0 px-5 pt-10 pb-5 z-30 glass-panel rounded-b-[2.5rem] flex flex-col gap-4 relative border-t-0 border-x-0">
-            <div className="flex justify-between items-center">
-              <h1 className="text-2xl font-extrabold tracking-tight flex items-center gap-2" style={{ color: 'var(--color-primary)' }}>
-                {view === 'tasks' ? 'Daftar Tugas' : view === 'urgent' ? <><Icon name="flame" /> Mendesak</> : 'Pengaturan'}
-              </h1>
-
-              <div className="flex gap-2">
-                <button onClick={forceRefresh} className="p-2 rounded-full bg-black/5 dark:bg-white/5 active:rotate-180 transition-all duration-500 border border-white/5">
-                  <Icon name="refresh" size={20} />
-                </button>
-                <div className="flex gap-1 bg-black/5 dark:bg-white/5 p-1 rounded-full border border-black/5 dark:border-white/5">
-                  <button onClick={() => setView('tasks')} className={`p-2 rounded-full transition-all ${view==='tasks'?'bg-white dark:bg-black shadow-lg':''}`} style={{ color: view==='tasks'?'var(--color-primary)':'' }}><Icon name="checkCircle" size={18}/></button>
-                  <button onClick={() => setView('urgent')} className={`p-2 rounded-full transition-all ${view==='urgent'?'bg-white dark:bg-black shadow-lg text-red-500':''}`}><Icon name="flame" size={18}/></button>
-                  <button onClick={() => setView('settings')} className={`p-2 rounded-full transition-all ${view==='settings'?'bg-white dark:bg-black shadow-lg':''}`} style={{ color: view==='settings'?'var(--color-primary)':'' }}><Icon name="settings" size={18}/></button>
-                </div>
-              </div>
-            </div>
-
-            {(view === 'tasks' || view === 'urgent') && (
-              <div className="relative w-full">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 opacity-50"><Icon name="search" size={18} /></div>
-                <input type="text" placeholder="Cari konteks atau tanggal..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="w-full py-3.5 pl-11 pr-5 rounded-[2rem] text-sm font-medium border-none shadow-inner" />
-              </div>
-            )}
-
-            {view === 'tasks' && (
-              <div className="flex rounded-[2rem] p-1.5 bg-black/10 dark:bg-black/30 border border-black/5 dark:border-white/5 relative z-10 shadow-inner">
-                {['Aktif', 'Tertunda', 'Selesai'].map(t => (
-                  <button key={t} onClick={() => setActiveTab(t)} className="flex-1 py-2 text-[13px] font-bold relative z-10 transition-colors" style={{ color: activeTab === t ? '#fff' : 'var(--color-text-muted)' }}>
-                    {activeTab === t && <motion.div layoutId="tabMarker" className="absolute inset-0 rounded-[1.5rem] shadow-md -z-10" style={{ backgroundColor: 'var(--color-primary)' }} transition={{ type: "spring", bounce: 0.2 }} />}
-                    {t}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {view === 'urgent' && (
-              <div className="flex overflow-x-auto gap-2 pb-2 pt-1 scrollbar-hide px-1">
-                {[
-                  { label: '1 Jam', val: 3600 * 1000 },
-                  { label: '10 Jam', val: 10 * 3600 * 1000 },
-                  { label: '1 Hari', val: 24 * 3600 * 1000 },
-                  { label: '1 Minggu', val: 7 * 24 * 3600 * 1000 },
-                  { label: '2 Minggu++', val: 9999 * 24 * 3600 * 1000 }
-                ].map(f => (
-                  <button key={f.label} onClick={() => setUrgentFilter(f.val)} className={`px-4 py-2.5 rounded-[1.5rem] text-[11px] uppercase tracking-wider font-extrabold whitespace-nowrap transition-all border ${urgentFilter === f.val ? 'border-red-500 text-red-500 bg-red-500/15 shadow-[0_0_15px_rgba(239,68,68,0.2)]' : 'border-transparent bg-black/5 dark:bg-white/5 opacity-60 hover:opacity-100'}`}>
-                    {f.label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </header>
-
-          <main className="flex-1 px-4 pt-5 pb-32 overflow-y-auto z-10 relative scroll-smooth">
-            <AnimatePresence mode="wait">
-              
-              {view === 'settings' ? (
-                <motion.div key="route-settings" variants={pageVariants} initial="initial" animate="in" exit="out" className="space-y-5">
-                  <div className="p-6 rounded-[2.5rem] glass-panel space-y-5 border border-black/5 dark:border-white/5">
-                    <h3 className="text-[11px] font-extrabold opacity-40 tracking-widest uppercase">Pencahayaan Visual</h3>
-                    <div className="grid grid-cols-2 gap-4">
-                      <button onClick={()=>setSettings(s=>({...s, mode:'light'}))} className={`p-4 rounded-[2rem] flex flex-col items-center gap-2 border-2 transition-all ${settings.mode==='light'?'border-[var(--color-primary)] text-[var(--color-primary)] bg-primary/5 shadow-md':'border-transparent bg-black/5 dark:bg-white/5 opacity-60'}`}>
-                        <Icon name="sun" size={28}/> <span className="text-xs font-bold">Terang</span>
-                      </button>
-                      <button onClick={()=>setSettings(s=>({...s, mode:'dark'}))} className={`p-4 rounded-[2rem] flex flex-col items-center gap-2 border-2 transition-all ${settings.mode==='dark'?'border-[var(--color-primary)] text-[var(--color-primary)] bg-primary/5 shadow-md':'border-transparent bg-black/5 dark:bg-white/5 opacity-60'}`}>
-                        <Icon name="moon" size={28}/> <span className="text-xs font-bold">Gelap</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="p-6 rounded-[2.5rem] glass-panel space-y-4 border border-black/5 dark:border-white/5">
-                    <h3 className="text-[11px] font-extrabold opacity-40 tracking-widest uppercase">Spektrum Liquid Kaca</h3>
-                    <div className="flex justify-between px-2">
-                      {Object.keys(THEMES).map(k => (
-                        <button key={k} onClick={() => setSettings(s=>({...s, theme: k}))} className="w-12 h-12 rounded-full border-2 transition-transform active:scale-90 flex items-center justify-center shadow-lg" style={{ backgroundColor: THEMES[k], borderColor: settings.theme === k ? 'var(--color-text)' : 'transparent' }}>
-                          {settings.theme === k && <Icon name="checkCircle" size={20} color="#fff" />}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="p-6 rounded-[2.5rem] glass-panel space-y-4 border border-black/5 dark:border-white/5">
-                    <h3 className="text-[11px] font-extrabold opacity-40 tracking-widest uppercase">Mesin Audio Peringatan</h3>
-                    <div className="flex justify-between items-center px-1">
-                      <span className="font-bold text-sm">Persisten Loop Alarm</span>
-                      <button onClick={() => setSettings(s => ({...s, soundEnabled: !s.soundEnabled}))} className={`w-14 h-8 rounded-full p-1 transition-colors ${settings.soundEnabled ? 'bg-primary shadow-[0_0_15px_var(--color-primary)]' : 'bg-gray-400 dark:bg-white/20'}`} style={{ backgroundColor: settings.soundEnabled ? 'var(--color-primary)' : '' }}>
-                        <motion.div layout className="w-6 h-6 bg-white rounded-full shadow-sm" style={{ marginLeft: settings.soundEnabled ? '24px' : '0px' }} />
-                      </button>
-                    </div>
-                  </div>
-                </motion.div>
-              ) : (
-                <motion.div key="route-tasks" variants={pageVariants} initial="initial" animate="in" exit="out" className="space-y-4">
-                  {activeTasks.length === 0 && (
-                    <div className="text-center mt-24 opacity-40 flex flex-col items-center">
-                      <Icon name="checkCircle" size={56} className="mb-4" />
-                      <p className="text-sm font-bold tracking-wide">Layar bersih. Tidak ada tugas.</p>
-                    </div>
-                  )}
-                  
-                  <AnimatePresence>
-                    {activeTasks.map(task => (
-                      <motion.div layout key={task.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9, x: -50 }} className="p-5 rounded-[2.5rem] flex items-start gap-4 glass-panel border border-black/5 dark:border-white/5 relative z-10 group hover:shadow-2xl transition-shadow">
-                        <button onClick={(e) => { 
-                          e.stopPropagation();
-                          setConfirmDialog({ id: task.id, action: task.completed ? 'uncomplete' : 'complete', msg: task.completed ? 'Kembalikan tugas ke daftar aktif?' : 'Tandai tugas ini selesai murni?' });
-                        }} className="mt-1 shrink-0 active:scale-75 transition-transform">
-                          <Icon name={task.completed ? 'checkCircle' : 'circle'} color={task.completed ? 'var(--color-primary)' : 'var(--color-text-muted)'} size={30} />
-                        </button>
-                        
-                        <div className={`flex-1 min-w-0 pt-0.5 ${task.completed ? 'opacity-40' : ''}`}>
-                          <h3 className={`font-bold text-base leading-tight ${task.completed ? 'line-through' : ''}`}>{task.title}</h3>
-                          {task.notes && <p className="text-[13px] opacity-70 mt-1.5 line-clamp-2">{task.notes}</p>}
-                          
-                          <div className="mt-4 flex flex-col gap-2 pt-3 border-t border-black/5 dark:border-white/10 text-[11px] font-bold opacity-80">
-                            <span className="flex items-center gap-1.5"><Icon name="plus" size={12} /> {formatIDDate(task.createdAt)}</span>
-                            {task.dueDate && <span className="flex items-center gap-1.5"><Icon name="clock" size={12} /> {formatIDDate(task.dueDate)}</span>}
-                            
-                            {(view === 'urgent' && task.dueDate && !task.completed) && (
-                              <CountdownInjector dueDate={task.dueDate} />
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="flex flex-col gap-2 shrink-0">
-                          <button onClick={(e) => { e.stopPropagation(); setModalState({ isOpen: true, mode: 'edit', data: task }); }} className="p-3 opacity-40 hover:opacity-100 text-blue-500 transition-colors bg-blue-500/10 rounded-full z-20 relative"><Icon name="settings" size={20} /></button>
-                          <button onClick={(e) => { e.stopPropagation(); setTasks(p => p.filter(t => t.id !== task.id)); }} className="p-3 opacity-40 hover:opacity-100 text-red-500 transition-colors bg-red-500/10 rounded-full z-20 relative"><Icon name="trash" size={20} /></button>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </AnimatePresence>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </main>
-
-          <AnimatePresence>
-            {(view === 'tasks' || view === 'urgent') && (
-              <motion.div initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 100, opacity: 0 }} className="absolute bottom-6 right-6 flex flex-col gap-4 z-40">
-                <button onClick={handleVoiceInput} className="p-4 rounded-full shadow-lg transition-transform glass-panel relative border border-white/10" style={{ color: 'var(--color-primary)' }}>
-                  {isListening && <span className="absolute inset-0 rounded-full animate-radar bg-primary/50" style={{ backgroundColor: 'var(--color-primary)' }}></span>}
-                  <Icon name="mic" size={24} />
-                </button>
-                <button onClick={() => setModalState({ isOpen: true, mode: 'create', data: null })} className="p-5 rounded-full shadow-[0_10px_30px_rgba(0,0,0,0.4)] active:scale-90 transition-transform text-white border border-white/20" style={{ backgroundColor: 'var(--color-primary)' }}>
-                  <Icon name="plus" size={32} />
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <AnimatePresence>
-            {confirmDialog && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-md px-6">
-                <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="w-full max-w-sm p-8 rounded-[3rem] glass-panel shadow-2xl flex flex-col items-center text-center border border-white/10">
-                  <div className="w-20 h-20 rounded-full flex items-center justify-center mb-5 bg-primary/20 shadow-inner" style={{ color: 'var(--color-primary)' }}>
-                    <Icon name="checkCircle" size={40} />
-                  </div>
-                  <h3 className="text-xl font-bold mb-3">Verifikasi Tindakan</h3>
-                  <p className="text-sm opacity-70 mb-8 px-2">{confirmDialog.msg}</p>
-                  <div className="flex gap-3 w-full">
-                    <button onClick={() => setConfirmDialog(null)} className="flex-1 py-4 rounded-[1.5rem] bg-black/20 dark:bg-white/10 font-bold text-sm hover:bg-black/30 dark:hover:bg-white/20 transition-colors">Batal</button>
-                    <button onClick={() => {
-                      const isComplete = confirmDialog.action === 'complete';
-                      setTasks(p => p.map(t => t.id === confirmDialog.id ? {...t, completed: isComplete} : t));
-                      setConfirmDialog(null);
-                    }} className="flex-1 py-4 rounded-[1.5rem] font-bold text-sm text-white shadow-xl active:scale-95 transition-transform" style={{ backgroundColor: 'var(--color-primary)' }}>
-                      Lanjutkan
-                    </button>
-                  </div>
-                </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <AnimatePresence>
-            {modalState.isOpen && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[60] flex items-end bg-black/70 backdrop-blur-md sm:items-center sm:justify-center">
-                <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', damping: 25, stiffness: 300 }} className="w-full max-w-md p-6 sm:p-8 glass-panel rounded-t-[3rem] sm:rounded-[3rem] border-b-0 sm:border flex flex-col gap-5 max-h-[95vh] overflow-y-auto shadow-[0_-20px_60px_rgba(0,0,0,0.5)]">
-                  <div className="w-16 h-1.5 bg-black/20 dark:bg-white/20 rounded-full mx-auto sm:hidden mb-2" />
-                  <h2 className="text-2xl font-black mt-2 tracking-tight uppercase opacity-80">{modalState.mode === 'create' ? 'Modul Tugas Baru' : 'Revisi Entri'}</h2>
-                  
-                  {/* PENGHAPUSAN AUTOFOCUS UNTUK MENCEGAH BUG VISUAL VIEWPORT */}
-                  <input id="taskTitle" type="text" defaultValue={modalState.data?.title || ''} placeholder="Deskripsi ringkas..." className="w-full p-4 rounded-[1.5rem] text-lg font-bold border-none" />
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold opacity-50 block uppercase tracking-widest pl-2">Titik Tenggat Absolut</label>
-                    <input id="taskDate" type="datetime-local" defaultValue={modalState.data?.dueDate ? new Date(modalState.data.dueDate).toISOString().slice(0,16) : ''} className="w-full p-4 rounded-[1.5rem] border-none text-sm font-bold" />
-                  </div>
-                  <textarea id="taskNotes" defaultValue={modalState.data?.notes || ''} placeholder="Parameter tambahan..." className="w-full p-5 rounded-[1.5rem] border-none min-h-[140px] resize-none text-sm font-medium leading-relaxed"></textarea>
-                  
-                  <div className="flex gap-3 pt-5 mt-auto">
-                    <button onClick={() => setModalState({isOpen:false})} className="flex-1 py-4 rounded-[1.5rem] bg-black/5 dark:bg-white/10 font-bold text-sm border border-black/5 dark:border-white/5 active:scale-95 transition-transform">Abaikan</button>
-                    <button onClick={() => {
-                      const title = document.getElementById('taskTitle').value;
-                      if (!title.trim()) return;
-                      const dateVal = document.getElementById('taskDate').value;
-                      const payload = { title, notes: document.getElementById('taskNotes').value, dueDate: dateVal ? new Date(dateVal).toISOString() : null };
-                      
-                      if (modalState.mode === 'create') {
-                        setTasks(p => [...p, { id: Date.now().toString(), createdAt: new Date().toISOString(), completed: false, ...payload }]);
-                      } else {
-                        setTasks(p => p.map(t => t.id === modalState.data.id ? { ...t, ...payload } : t));
-                      }
-                      setModalState({isOpen:false});
-                    }} className="flex-1 py-4 rounded-[1.5rem] font-bold text-white shadow-xl text-sm active:scale-95 transition-transform border border-white/20" style={{ backgroundColor: 'var(--color-primary)' }}>Eksekusi Simpan</button>
-                  </div>
-                </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      );
-    }
-
     const CountdownInjector = ({ dueDate }) => {
       const countdown = useCountdown(dueDate);
       return (
@@ -547,6 +157,728 @@
       );
     };
 
+    let alarmContext = null;
+    let alarmInterval = null;
+    let isAlarmUnlocked = false;
+
+    const requestNativeNotification = () => {
+      if (!("Notification" in window)) return;
+      if (Notification.permission !== "granted" && Notification.permission !== "denied") Notification.requestPermission();
+    };
+
+    const triggerNativeNotification = (title, body) => {
+      if ("Notification" in window && Notification.permission === "granted") new Notification(title, { body: body, icon: './icon-192.png' });
+    };
+
+    const playModernRingtone = () => {
+      try {
+        if (!alarmContext) alarmContext = new (window.AudioContext || window.webkitAudioContext)();
+        if (alarmContext.state === 'suspended') alarmContext.resume();
+        const now = alarmContext.currentTime;
+        const playNote = (freq, startTime, duration) => {
+          const osc = alarmContext.createOscillator(), gain = alarmContext.createGain();
+          osc.type = 'sine'; 
+          osc.frequency.setValueAtTime(freq, startTime);
+          gain.gain.setValueAtTime(0, startTime);
+          gain.gain.linearRampToValueAtTime(0.6, startTime + 0.05);
+          gain.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
+          osc.connect(gain); gain.connect(alarmContext.destination);
+          osc.start(startTime); osc.stop(startTime + duration);
+        };
+        playNote(523.25, now, 0.5);       
+        playNote(659.25, now + 0.1, 0.5); 
+        playNote(783.99, now + 0.2, 0.5);  
+        playNote(1046.50, now + 0.3, 1.0); 
+      } catch(e) {}
+    };
+
+    const unlockAudioSystem = () => {
+      if(!isAlarmUnlocked) {
+        isAlarmUnlocked = true;
+        try {
+          alarmContext = new (window.AudioContext || window.webkitAudioContext)();
+          if(alarmContext.state === 'suspended') alarmContext.resume();
+          const osc = alarmContext.createOscillator(), gain = alarmContext.createGain();
+          gain.gain.value = 0; osc.connect(gain); gain.connect(alarmContext.destination);
+          osc.start(); osc.stop(alarmContext.currentTime + 0.001);
+        } catch (e) {}
+      }
+    };
+
+    const parseVoiceCommand = (text) => {
+      let draft = { title: "", notes: "", dueDate: null, category: "Lainnya" };
+      let lower = text.toLowerCase();
+      
+      const descMatch = lower.match(/(?:dengan deskripsi|deskripsi|catatan)\s+(.*)/);
+      if (descMatch) {
+        draft.notes = text.substring(descMatch.index + descMatch[0].indexOf(descMatch[1]));
+        text = text.substring(0, descMatch.index);
+        lower = text.toLowerCase();
+      }
+      
+      if(lower.includes("akademik") || lower.includes("kampus") || lower.includes("sekolah")) draft.category = "Akademik";
+      else if(lower.includes("kerja") || lower.includes("kantor") || lower.includes("rapat")) draft.category = "Pekerjaan";
+      else if(lower.includes("pribadi") || lower.includes("rumah")) draft.category = "Pribadi";
+
+      const now = new Date();
+      let targetDate = new Date();
+      let timeSet = false;
+
+      const days = ["minggu", "senin", "selasa", "rabu", "kamis", "jumat", "sabtu"];
+      const todayIdx = now.getDay();
+      for (let i = 0; i < days.length; i++) {
+        if (lower.includes(`hari ${days[i]}`)) {
+          let dayDiff = i - todayIdx;
+          if (dayDiff <= 0) dayDiff += 7;
+          targetDate.setDate(now.getDate() + dayDiff);
+          timeSet = true; break;
+        }
+      }
+
+      if (!timeSet) {
+        if (lower.includes("besok")) { targetDate.setDate(now.getDate() + 1); timeSet = true; }
+        else if (lower.includes("lusa")) { targetDate.setDate(now.getDate() + 2); timeSet = true; }
+      }
+
+      const timeMatch = lower.match(/(?:jam|pukul)\s*(\d{1,2})(?:\s*(pagi|siang|sore|malam))?/);
+      if (timeMatch) {
+        let hour = parseInt(timeMatch[1]);
+        const modifier = timeMatch[2];
+        if (modifier === 'siang' || modifier === 'sore' || modifier === 'malam') { if (hour < 12) hour += 12; } 
+        else if (modifier === 'pagi' && hour === 12) { hour = 0; }
+        targetDate.setHours(hour, 0, 0, 0);
+        timeSet = true;
+      } else if (timeSet) { targetDate.setHours(12, 0, 0, 0); } 
+
+      if (timeSet) {
+        draft.dueDate = new Date(targetDate.getTime() - (targetDate.getTimezoneOffset() * 60000)).toISOString().slice(0,16);
+        draft.title = text.replace(/besok|lusa|(?:hari\s+(?:senin|selasa|rabu|kamis|jumat|sabtu|minggu))|(?:jam|pukul)\s*\d{1,2}(?:\s*(?:pagi|siang|sore|malam))?/gi, '').trim();
+      } else { draft.title = text.trim(); }
+      
+      draft.title = draft.title.replace(/akademik|kampus|sekolah|kerja|kantor|rapat|pribadi|rumah/gi, '').trim();
+      if(!draft.title) draft.title = "Tugas Baru";
+      draft.title = draft.title.charAt(0).toUpperCase() + draft.title.slice(1);
+      return draft;
+    };
+
+    const ItemCard = ({ item, isShopping, view, onToggle, onEdit, onDelete, onPin }) => {
+      const [isExpanded, setIsExpanded] = useState(false);
+      const isOverdue = item.dueDate && new Date(item.dueDate) < new Date() && !item.completed;
+      const isLongNote = item.notes && item.notes.length > 80;
+      const catColor = CATEGORIES[item.category]?.color || '#64748b';
+
+      return (
+        <div className="relative w-full mb-5">
+          <div className="absolute inset-y-0 right-0 w-[50%] bg-red-600 rounded-[2.5rem] flex items-center justify-end pr-8 shadow-inner" style={{ zIndex: 0 }}>
+            <span className="text-white font-black tracking-widest flex items-center gap-3 text-lg opacity-80">
+              <Icon name="trash" size={36} />
+            </span>
+          </div>
+
+          <motion.div 
+            layout 
+            drag="x" 
+            dragConstraints={{ left: 0, right: 0 }} 
+            dragElastic={{ left: 0.5, right: 0 }}
+            onDragEnd={(e, info) => { if (info.offset.x < -80) onDelete(); }}
+            className={`solid-panel p-6 rounded-[2.5rem] flex items-start gap-5 relative z-10 w-full transition-colors ${item.isPinned ? 'border-[var(--color-primary)] shadow-[0_0_20px_rgba(var(--color-primary),0.2)]' : ''}`}
+          >
+            <button onClick={(e) => { e.stopPropagation(); onToggle(); }} className="mt-1 shrink-0 active:scale-75 transition-transform">
+              <Icon name={item.completed ? 'checkCircle' : 'circle'} color={item.completed ? 'var(--color-primary)' : 'var(--color-text-muted)'} size={36} />
+            </button>
+            
+            <div className={`flex-1 min-w-0 pt-0.5 ${item.completed ? 'opacity-40 grayscale' : ''}`}>
+              {!isShopping && (
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="px-2 py-0.5 rounded-md text-[10px] font-black tracking-widest uppercase text-white shadow-sm" style={{ backgroundColor: catColor }}>
+                    {item.category || 'Lainnya'}
+                  </span>
+                </div>
+              )}
+              
+              <h3 className={`font-bold text-xl leading-tight ${item.completed ? 'line-through' : ''}`}>{item.title}</h3>
+              
+              {(!isShopping && item.notes) && (
+                <div className="mt-2 text-[15px] opacity-80 leading-relaxed font-medium">
+                  {isExpanded || !isLongNote ? renderFormattedNotes(item.notes) : renderFormattedNotes(item.notes.substring(0, 80) + '...')}
+                  {isLongNote && (
+                    <button onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }} className="block mt-2 text-[var(--color-primary)] font-bold text-xs uppercase tracking-widest active:scale-95 transition-transform">
+                      {isExpanded ? 'Tutup Deskripsi' : 'Baca Selengkapnya'}
+                    </button>
+                  )}
+                </div>
+              )}
+              
+              <div className="mt-4 flex flex-col gap-2 pt-3 border-t border-black/10 dark:border-white/10 text-[13px] font-bold opacity-80">
+                <span className="flex items-center gap-2"><Icon name="plus" size={16} /> {formatIDDate(item.createdAt)}</span>
+                {item.dueDate && <span className={`flex items-center gap-2 ${isOverdue ? 'text-red-500' : ''}`}><Icon name="clock" size={16} /> {formatIDDate(item.dueDate)}</span>}
+                {(view === 'urgent' && item.dueDate && !item.completed) && <CountdownInjector dueDate={item.dueDate} />}
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-4 shrink-0">
+              {!isShopping && <button onClick={(e) => { e.stopPropagation(); onPin(); }} className={`p-3 transition-colors rounded-full z-20 relative ${item.isPinned ? 'opacity-100 bg-primary/20 text-[var(--color-primary)]' : 'opacity-40 hover:opacity-100 bg-black/5 dark:bg-white/5'}`}><Icon name="pin" size={24} /></button>}
+              <button onClick={(e) => { e.stopPropagation(); onEdit(); }} className="p-3 opacity-40 hover:opacity-100 text-blue-500 transition-colors bg-blue-500/10 rounded-full z-20 relative"><Icon name="settings" size={24} /></button>
+            </div>
+          </motion.div>
+        </div>
+      );
+    };
+
+    function App() {
+      const [tasks, setTasks] = useState(() => {
+        try { const local = localStorage.getItem('catatan_tugas_v5_data'); return local ? JSON.parse(local) : []; } 
+        catch(e) { return []; }
+      });
+      const [shopItems, setShopItems] = useState(() => {
+        try { const shop = localStorage.getItem('catatan_tugas_v5_shop'); return shop ? JSON.parse(shop) : []; } 
+        catch(e) { return []; }
+      });
+      const [settings, setSettings] = useState(() => {
+        try { const sets = localStorage.getItem('catatan_tugas_v5_sets'); return sets ? JSON.parse(sets) : { theme: 'orange', mode: 'dark', soundEnabled: true }; } 
+        catch(e) { return { theme: 'orange', mode: 'dark', soundEnabled: true }; }
+      });
+
+      const [view, setView] = useState('tasks');
+      const [activeTab, setActiveTab] = useState('Aktif');
+      const [shopTab, setShopTab] = useState('Aktif');
+      const [urgentType, setUrgentType] = useState('Tugas');
+      
+      const [searchQuery, setSearchQuery] = useState('');
+      const [urgentFilter, setUrgentFilter] = useState(10 * 3600 * 1000); 
+      
+      const [shopInputTitle, setShopInputTitle] = useState('');
+      const [shopInputDate, setShopInputDate] = useState('');
+
+      const [modalState, setModalState] = useState({ isOpen: false, mode: 'create', data: null, isShop: false });
+      const [confirmDialog, setConfirmDialog] = useState(null);
+      const [activeAlarmTask, setActiveAlarmTask] = useState(null);
+      const [isListening, setIsListening] = useState(false);
+
+      const tasksRef = useRef(tasks);
+      const shopRef = useRef(shopItems);
+      const settingsRef = useRef(settings);
+
+      useEffect(() => { tasksRef.current = tasks; settingsRef.current = settings; shopRef.current = shopItems; }, [tasks, settings, shopItems]);
+
+      useEffect(() => {
+        const forceSave = () => {
+          localStorage.setItem('catatan_tugas_v5_data', JSON.stringify(tasksRef.current));
+          localStorage.setItem('catatan_tugas_v5_shop', JSON.stringify(shopRef.current));
+          localStorage.setItem('catatan_tugas_v5_sets', JSON.stringify(settingsRef.current));
+        };
+        window.addEventListener('beforeunload', forceSave);
+        window.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') forceSave(); });
+        document.addEventListener('pagehide', forceSave);
+        return () => {
+          window.removeEventListener('beforeunload', forceSave);
+          window.removeEventListener('visibilitychange', forceSave);
+          document.removeEventListener('pagehide', forceSave);
+        };
+      }, []);
+
+      useEffect(() => {
+        const root = document.documentElement;
+        if (settings.mode === 'dark') {
+          root.classList.add('dark');
+          root.style.setProperty('--color-bg', '#030303');
+          root.style.setProperty('--color-surface', '#0a0a0a'); 
+          root.style.setProperty('--color-gradient', 'radial-gradient(circle at top left, #1a1a1a, #030303)');
+          root.style.setProperty('--color-glass', 'rgba(15, 15, 15, 0.6)');
+          root.style.setProperty('--color-border', 'rgba(255, 255, 255, 0.04)');
+          root.style.setProperty('--color-input', 'rgba(255, 255, 255, 0.03)');
+          root.style.setProperty('--color-input-focus', 'rgba(0, 0, 0, 0.6)');
+          root.style.setProperty('--color-text', '#ffffff');
+          root.style.setProperty('--color-text-muted', 'rgba(255, 255, 255, 0.3)');
+        } else {
+          root.classList.remove('dark');
+          root.style.setProperty('--color-bg', '#f8fafc');
+          root.style.setProperty('--color-surface', '#ffffff'); 
+          root.style.setProperty('--color-gradient', 'radial-gradient(circle at top left, #ffffff, #f1f5f9)');
+          root.style.setProperty('--color-glass', 'rgba(255, 255, 255, 0.75)');
+          root.style.setProperty('--color-border', 'rgba(0, 0, 0, 0.04)');
+          root.style.setProperty('--color-input', 'rgba(0, 0, 0, 0.03)');
+          root.style.setProperty('--color-input-focus', 'rgba(255, 255, 255, 1)');
+          root.style.setProperty('--color-text', '#0f172a');
+          root.style.setProperty('--color-text-muted', 'rgba(0, 0, 0, 0.4)');
+        }
+        root.style.setProperty('--color-primary', THEMES[settings.theme]);
+      }, [settings]);
+
+      useEffect(() => {
+        if (!modalState.isOpen && !confirmDialog) {
+          setTimeout(() => { window.scrollTo(0, 0); document.body.scrollTop = 0; document.documentElement.scrollTop = 0; }, 50);
+        }
+      }, [modalState.isOpen, confirmDialog]);
+
+      useEffect(() => {
+        document.body.addEventListener('touchstart', unlockAudioSystem, { once: true });
+        document.body.addEventListener('click', unlockAudioSystem, { once: true });
+        requestNativeNotification();
+      }, []);
+
+      useEffect(() => {
+        const interval = setInterval(() => {
+          if (!settings.soundEnabled || activeAlarmTask) return;
+          const now = Date.now();
+          let triggeredTask = null;
+          
+          const processItems = (items, setter) => {
+            let mutated = false;
+            const updated = items.map(t => {
+              if (t.completed || !t.dueDate || t.notifiedExact) return t;
+              const diff = new Date(t.dueDate).getTime() - now;
+              if (diff <= 0 && diff > -300000 && !triggeredTask) {
+                triggeredTask = t; mutated = true; return { ...t, notifiedExact: true };
+              }
+              return t;
+            });
+            if (mutated) setter(updated);
+          };
+
+          processItems(tasks, setTasks);
+          if(!triggeredTask) processItems(shopItems, setShopItems);
+          
+          if (triggeredTask) {
+            setActiveAlarmTask(triggeredTask);
+            triggerNativeNotification("Batas Waktu!", `Aktivitas "${triggeredTask.title}" telah mencapai tenggat waktu.`);
+            if(alarmInterval) clearInterval(alarmInterval);
+            playModernRingtone(); 
+            alarmInterval = setInterval(playModernRingtone, 2500); 
+          }
+        }, 1000);
+        return () => clearInterval(interval);
+      }, [settings.soundEnabled, activeAlarmTask, tasks, shopItems]);
+
+      const stopAlarm = () => { clearInterval(alarmInterval); alarmInterval = null; setActiveAlarmTask(null); };
+
+      const snoozeAlarm = () => {
+        if (!activeAlarmTask) return;
+        const newTime = new Date(Date.now() + 600000).toISOString();
+        setTasks(p => p.map(t => t.id === activeAlarmTask.id ? { ...t, dueDate: newTime, notifiedExact: false } : t));
+        setShopItems(p => p.map(t => t.id === activeAlarmTask.id ? { ...t, dueDate: newTime, notifiedExact: false } : t));
+        stopAlarm();
+      };
+
+      const handleVoiceInput = () => {
+        try {
+          const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+          if (!SpeechRec) { alert("Sistem operasi menolak akses instrumen mikrofon."); return; }
+          const recognition = new SpeechRec();
+          recognition.lang = 'id-ID';
+          recognition.start();
+          setIsListening(true);
+          
+          recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            setIsListening(false);
+            
+            // WHY: Injeksi NLP spesifik untuk menu belanja memecah string berdasarkan konjungsi/tanda baca koma.
+            // Memastikan efisiensi batch insert tanpa membuka modal berulang kali.
+            if (view === 'shopping') {
+              const cleaned = transcript.replace(/^beli\s+/i, '');
+              const items = cleaned.split(/,|\bdan\b|\bserta\b/i).map(i => i.trim()).filter(i => i.length > 0);
+              
+              if (items.length > 0) {
+                const newEntries = items.map((itemName, idx) => ({
+                  id: Date.now().toString() + idx,
+                  title: itemName.charAt(0).toUpperCase() + itemName.slice(1),
+                  dueDate: null, 
+                  completed: false,
+                  notifiedExact: false,
+                  createdAt: new Date().toISOString()
+                }));
+                setShopItems(p => [...newEntries, ...p]);
+              }
+            } else {
+              setModalState({ isOpen: true, mode: 'create', data: parseVoiceCommand(transcript), isShop: false });
+            }
+          };
+          recognition.onerror = () => setIsListening(false);
+          recognition.onend = () => setIsListening(false);
+        } catch (error) {
+          setIsListening(false);
+          console.error(JSON.stringify({what: "Voice Engine Error", where: "handleVoiceInput", why: error.message}));
+        }
+      };
+
+      const handleQuickAddShop = () => {
+        if (!shopInputTitle.trim()) return;
+        const newItem = {
+          id: Date.now().toString(),
+          title: shopInputTitle.trim(),
+          dueDate: shopInputDate ? new Date(shopInputDate).toISOString() : null,
+          completed: false,
+          notifiedExact: false,
+          createdAt: new Date().toISOString()
+        };
+        setShopItems(p => [newItem, ...p]);
+        setShopInputTitle(''); setShopInputDate('');
+        setSearchQuery('');
+      };
+
+      const getActiveItems = (sourceList, tabFilter) => {
+        const query = searchQuery.toLowerCase();
+        let source = sourceList;
+
+        if (view === 'urgent') {
+          const now = Date.now();
+          source = sourceList.filter(t => {
+            if (t.completed || !t.dueDate) return false;
+            const diff = new Date(t.dueDate).getTime() - now;
+            return diff <= urgentFilter && diff > -86400000;
+          });
+        } else {
+          source = sourceList.filter(t => {
+            if (tabFilter === 'Selesai') return t.completed;
+            if (tabFilter === 'Tertunda') return !t.completed && t.dueDate && new Date(t.dueDate).getTime() < Date.now();
+            return !t.completed; 
+          });
+        }
+
+        return source.filter(t => {
+          if (!query) return true;
+          const target = `${t.title} ${t.notes || ''} ${t.category || ''} ${formatIDDate(t.createdAt)} ${formatIDDate(t.dueDate)}`.toLowerCase();
+          return target.includes(query);
+        }).sort((a,b) => {
+          if (a.isPinned && !b.isPinned) return -1;
+          if (!a.isPinned && b.isPinned) return 1;
+          const tA = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
+          const tB = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
+          return tA - tB;
+        });
+      };
+
+      const activeFilteredTasks = useMemo(() => getActiveItems(tasks, activeTab), [tasks, activeTab, searchQuery, view, urgentFilter]);
+      const activeFilteredShop = useMemo(() => getActiveItems(shopItems, shopTab), [shopItems, shopTab, searchQuery, view, urgentFilter]);
+      
+      const forceRefresh = () => window.location.reload(true);
+      const completionRate = tasks.length === 0 ? 0 : Math.round((tasks.filter(t => t.completed).length / tasks.length) * 100);
+
+      const transitionConfig = { type: "spring", stiffness: 400, damping: 30 };
+      const pageVariants = { initial: { opacity: 0, x: 20 }, in: { opacity: 1, x: 0 }, out: { opacity: 0, x: -20 } };
+
+      return (
+        <div className="w-full h-full flex flex-col relative overflow-hidden">
+          
+          <AnimatePresence>
+            {activeAlarmTask && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/90 backdrop-blur-xl px-6 text-center">
+                <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 1.2 }} className="w-32 h-32 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center mb-8 shadow-[0_0_50px_rgba(220,38,38,0.3)]">
+                  <Icon name="bell" size={64} />
+                </motion.div>
+                <h2 className="text-5xl font-black text-white tracking-widest mb-4 uppercase text-red-500">Batas Waktu</h2>
+                <p className="text-3xl font-bold text-white mb-16 px-4 leading-relaxed">"{activeAlarmTask.title}"</p>
+                <div className="flex flex-col gap-5 w-full max-w-sm">
+                  <button onClick={stopAlarm} className="w-full py-6 rounded-[2rem] bg-red-600 text-white font-black text-2xl tracking-widest shadow-[0_0_40px_rgba(220,38,38,0.6)] active:scale-95 transition-transform">MATIKAN ALARM</button>
+                  <button onClick={snoozeAlarm} className="w-full py-5 rounded-[2rem] bg-white/10 text-white font-bold text-xl tracking-widest border border-white/20 active:scale-95 transition-transform flex items-center justify-center gap-3"><Icon name="snooze" size={28} /> TUNDA 10 MENIT</button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <div className="absolute top-[-10%] left-[-20%] w-[80%] h-[50%] rounded-[50%] opacity-[0.12] blur-[120px] pointer-events-none transition-colors duration-1000" style={{ backgroundColor: 'var(--color-primary)' }}></div>
+          <div className="absolute bottom-[-10%] right-[-20%] w-[60%] h-[40%] rounded-[50%] opacity-[0.08] blur-[100px] pointer-events-none transition-colors duration-1000" style={{ backgroundColor: 'var(--color-primary)' }}></div>
+
+          <header className="shrink-0 px-6 pt-12 pb-6 z-30 glass-panel rounded-b-[3rem] flex flex-col gap-6 relative border-t-0 border-x-0">
+            {/* Relokasi Search Global Header */}
+            <div className="flex justify-between items-start gap-2">
+              <div className="flex-1 min-w-0">
+                <h1 className="text-2xl sm:text-3xl font-black tracking-tight flex items-center gap-2 truncate" style={{ color: 'var(--color-primary)' }}>
+                  {view === 'tasks' ? 'Catatan Tugas' : view === 'urgent' ? <><Icon name="flame" size={28}/> Mendesak</> : view === 'shopping' ? <><Icon name="shopping" size={28}/> Belanja</> : 'Pengaturan'}
+                </h1>
+                {view === 'tasks' && <p className="text-sm font-bold opacity-60 mt-1 uppercase tracking-widest">Target Tuntas: {completionRate}%</p>}
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <div className="relative">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 opacity-50"><Icon name="search" size={16} /></div>
+                  <input type="text" placeholder="Cari..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="w-[110px] sm:w-[150px] py-2 pl-9 pr-3 rounded-full text-xs font-medium border-none shadow-inner" />
+                </div>
+                <button onClick={forceRefresh} className="p-2.5 rounded-full bg-black/5 dark:bg-white/5 active:rotate-180 transition-all duration-500 border border-black/5 dark:border-white/5">
+                  <Icon name="refresh" size={18} />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex gap-1 bg-black/5 dark:bg-white/5 p-1.5 rounded-full border border-black/5 dark:border-white/5 w-full justify-between">
+              <button onClick={() => setView('tasks')} className={`flex-1 py-3 rounded-full flex justify-center transition-all ${view==='tasks'?'bg-white dark:bg-black shadow-lg':''}`} style={{ color: view==='tasks'?'var(--color-primary)':'' }}><Icon name="checkCircle" size={24}/></button>
+              <button onClick={() => setView('shopping')} className={`flex-1 py-3 rounded-full flex justify-center transition-all ${view==='shopping'?'bg-white dark:bg-black shadow-lg text-[var(--color-primary)]':''}`} style={{ color: view==='shopping'?'var(--color-primary)':'' }}><Icon name="shopping" size={24}/></button>
+              <button onClick={() => setView('urgent')} className={`flex-1 py-3 rounded-full flex justify-center transition-all ${view==='urgent'?'bg-white dark:bg-black shadow-lg text-red-500':''}`}><Icon name="flame" size={24}/></button>
+              <button onClick={() => setView('settings')} className={`flex-1 py-3 rounded-full flex justify-center transition-all ${view==='settings'?'bg-white dark:bg-black shadow-lg':''}`} style={{ color: view==='settings'?'var(--color-primary)':'' }}><Icon name="settings" size={24}/></button>
+            </div>
+
+            {view === 'tasks' && (
+              <div className="flex rounded-[2rem] p-2 bg-black/5 dark:bg-black/30 border border-black/5 dark:border-white/5 relative z-10 shadow-inner">
+                {['Aktif', 'Tertunda', 'Selesai'].map(t => (
+                  <button key={t} onClick={() => setActiveTab(t)} className="flex-1 py-3 text-[14px] font-bold relative z-10 transition-colors tracking-wide" style={{ color: activeTab === t ? '#fff' : 'var(--color-text-muted)' }}>
+                    {activeTab === t && <motion.div layoutId="tabMarker" className="absolute inset-0 rounded-[1.5rem] shadow-md -z-10" style={{ backgroundColor: 'var(--color-primary)' }} transition={{ type: "spring", bounce: 0.2 }} />}
+                    {t}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Restrukturisasi Input Belanja - 1 Baris */}
+            {view === 'shopping' && (
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center gap-2 w-full">
+                  <input type="text" value={shopInputTitle} onChange={e=>setShopInputTitle(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleQuickAddShop()} placeholder="Barang..." className="flex-1 min-w-0 py-3 px-4 rounded-[2rem] border-none text-sm font-bold shadow-inner" />
+                  <input type="datetime-local" value={shopInputDate} onChange={e=>setShopInputDate(e.target.value)} className="w-[130px] shrink-0 py-3 px-2 rounded-[2rem] border-none text-[11px] font-bold shadow-inner text-center leading-none" />
+                  <button onClick={handleQuickAddShop} className="shrink-0 w-12 h-12 rounded-full text-white shadow-xl active:scale-95 flex items-center justify-center transition-transform" style={{ backgroundColor: 'var(--color-primary)' }}><Icon name="plus" size={22}/></button>
+                </div>
+                
+                <div className="flex rounded-[2rem] p-2 bg-black/5 dark:bg-black/30 border border-black/5 dark:border-white/5 relative z-10 shadow-inner mt-2">
+                  {['Aktif', 'Selesai'].map(t => (
+                    <button key={t} onClick={() => setShopTab(t)} className="flex-1 py-3 text-[14px] font-bold relative z-10 transition-colors tracking-wide" style={{ color: shopTab === t ? '#fff' : 'var(--color-text-muted)' }}>
+                      {shopTab === t && <motion.div layoutId="shopTabMarker" className="absolute inset-0 rounded-[1.5rem] shadow-md -z-10" style={{ backgroundColor: 'var(--color-primary)' }} transition={{ type: "spring", bounce: 0.2 }} />}
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {view === 'urgent' && (
+              <div className="flex flex-col gap-3">
+                <div className="flex gap-2">
+                  <button onClick={() => setUrgentType('Tugas')} className={`flex-1 py-3 rounded-[2rem] font-bold text-sm transition-all border ${urgentType==='Tugas'?'border-[var(--color-primary)] text-[var(--color-primary)] bg-primary/10':'border-transparent bg-black/5 dark:bg-white/5 opacity-60'}`}>Mode Tugas</button>
+                  <button onClick={() => setUrgentType('Belanja')} className={`flex-1 py-3 rounded-[2rem] font-bold text-sm transition-all border ${urgentType==='Belanja'?'border-[var(--color-primary)] text-[var(--color-primary)] bg-primary/10':'border-transparent bg-black/5 dark:bg-white/5 opacity-60'}`}>Mode Belanja</button>
+                </div>
+                <div className="flex overflow-x-auto gap-3 pb-2 pt-1 scrollbar-hide px-1">
+                  {[{ label: '1 Jam', val: 3600 * 1000 }, { label: '10 Jam', val: 10 * 3600 * 1000 }, { label: '1 Hari', val: 24 * 3600 * 1000 }, { label: '1 Minggu', val: 7 * 24 * 3600 * 1000 }, { label: '2 Minggu++', val: 9999 * 24 * 3600 * 1000 }].map(f => (
+                    <button key={f.label} onClick={() => setUrgentFilter(f.val)} className={`px-5 py-3 rounded-[2rem] text-xs uppercase tracking-widest font-extrabold whitespace-nowrap transition-all border ${urgentFilter === f.val ? 'border-red-500 text-red-500 bg-red-500/15 shadow-[0_0_20px_rgba(239,68,68,0.2)]' : 'border-transparent bg-black/5 dark:bg-white/5 opacity-60 hover:opacity-100'}`}>
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {((view === 'tasks' && activeTab === 'Selesai' && tasks.some(t => t.completed)) || (view === 'shopping' && shopTab === 'Selesai' && shopItems.some(t => t.completed))) && (
+              <button onClick={() => setConfirmDialog({ id: 'sweep', action: 'sweep', msg: 'Hapus permanen seluruh entri yang telah tuntas di kategori ini?' })} className="w-full mt-2 py-4 rounded-[2rem] bg-red-500/10 text-red-500 font-bold border border-red-500/20 active:scale-95 transition-transform flex items-center justify-center gap-3">
+                <Icon name="sweep" size={24} /> Bersihkan Arsip Selesai
+              </button>
+            )}
+          </header>
+
+          <main className="flex-1 px-5 pt-6 pb-40 overflow-y-auto z-10 relative scroll-smooth">
+            <AnimatePresence mode="wait">
+              {view === 'settings' && (
+                <motion.div key="route-settings" variants={pageVariants} initial="initial" animate="in" exit="out" transition={transitionConfig} className="space-y-6">
+                  <div className="p-8 rounded-[3rem] glass-panel space-y-6 border border-black/5 dark:border-white/5">
+                    <h3 className="text-xs font-black opacity-40 tracking-widest uppercase">Pencahayaan Visual</h3>
+                    <div className="grid grid-cols-2 gap-5">
+                      <button onClick={()=>setSettings(s=>({...s, mode:'light'}))} className={`p-6 rounded-[2rem] flex flex-col items-center gap-3 border-2 transition-all ${settings.mode==='light'?'border-[var(--color-primary)] text-[var(--color-primary)] bg-primary/5 shadow-md':'border-transparent bg-black/5 dark:bg-white/5 opacity-60'}`}>
+                        <Icon name="sun" size={32}/> <span className="text-sm font-bold">Terang</span>
+                      </button>
+                      <button onClick={()=>setSettings(s=>({...s, mode:'dark'}))} className={`p-6 rounded-[2rem] flex flex-col items-center gap-3 border-2 transition-all ${settings.mode==='dark'?'border-[var(--color-primary)] text-[var(--color-primary)] bg-primary/5 shadow-md':'border-transparent bg-black/5 dark:bg-white/5 opacity-60'}`}>
+                        <Icon name="moon" size={32}/> <span className="text-sm font-bold">Gelap</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="p-8 rounded-[3rem] glass-panel space-y-5 border border-black/5 dark:border-white/5">
+                    <h3 className="text-xs font-black opacity-40 tracking-widest uppercase">Spektrum Liquid Kaca</h3>
+                    <div className="flex justify-between px-2">
+                      {Object.keys(THEMES).map(k => (
+                        <button key={k} onClick={() => setSettings(s=>({...s, theme: k}))} className="w-14 h-14 rounded-full border-2 transition-transform active:scale-90 flex items-center justify-center shadow-lg" style={{ backgroundColor: THEMES[k], borderColor: settings.theme === k ? 'var(--color-text)' : 'transparent' }}>
+                          {settings.theme === k && <Icon name="checkCircle" size={24} color="#fff" />}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="p-8 rounded-[3rem] glass-panel space-y-5 border border-black/5 dark:border-white/5">
+                    <h3 className="text-xs font-black opacity-40 tracking-widest uppercase">Sistem Notifikasi Push</h3>
+                    <div className="flex justify-between items-center px-1">
+                      <span className="font-bold text-base">Persisten Loop Alarm</span>
+                      <button onClick={() => {
+                        setSettings(s => ({...s, soundEnabled: !s.soundEnabled}));
+                        if(!settings.soundEnabled) requestNativeNotification();
+                      }} className={`w-16 h-9 rounded-full p-1.5 transition-colors ${settings.soundEnabled ? 'bg-primary shadow-[0_0_20px_var(--color-primary)]' : 'bg-gray-400 dark:bg-white/20'}`} style={{ backgroundColor: settings.soundEnabled ? 'var(--color-primary)' : '' }}>
+                        <motion.div layout className="w-6 h-6 bg-white rounded-full shadow-sm" style={{ marginLeft: settings.soundEnabled ? '28px' : '0px' }} />
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {view === 'tasks' && (
+                <motion.div key="route-tasks" variants={pageVariants} initial="initial" animate="in" exit="out" transition={transitionConfig} className="space-y-2">
+                  {activeFilteredTasks.length === 0 && (
+                    <div className="text-center mt-32 opacity-40 flex flex-col items-center">
+                      <Icon name="checkCircle" size={72} className="mb-6" />
+                      <p className="text-lg font-bold tracking-wide">Layar bersih. Tidak ada tugas.</p>
+                    </div>
+                  )}
+                  <AnimatePresence>
+                    {activeFilteredTasks.map(task => (
+                      <ItemCard 
+                        key={task.id} item={task} isShopping={false} view={view}
+                        onToggle={() => setTasks(p => p.map(t => t.id === task.id ? {...t, completed: !t.completed} : t))}
+                        onEdit={() => setModalState({ isOpen: true, mode: 'edit', data: task, isShop: false })}
+                        onDelete={() => setConfirmDialog({ id: task.id, action: 'delete_task', msg: 'Hapus tugas ini secara permanen dari sistem?' })}
+                        onPin={() => setTasks(p => p.map(t => t.id === task.id ? {...t, isPinned: !t.isPinned} : t))}
+                      />
+                    ))}
+                  </AnimatePresence>
+                </motion.div>
+              )}
+
+              {view === 'shopping' && (
+                <motion.div key="route-shopping" variants={pageVariants} initial="initial" animate="in" exit="out" transition={transitionConfig} className="space-y-2">
+                  {activeFilteredShop.length === 0 && (
+                    <div className="text-center mt-32 opacity-40 flex flex-col items-center">
+                      <Icon name="shopping" size={72} className="mb-6" />
+                      <p className="text-lg font-bold tracking-wide">Daftar belanja kosong.</p>
+                    </div>
+                  )}
+                  <AnimatePresence>
+                    {activeFilteredShop.map(item => (
+                      <ItemCard 
+                        key={item.id} item={item} isShopping={true} view={view}
+                        onToggle={() => setShopItems(p => p.map(t => t.id === item.id ? {...t, completed: !t.completed} : t))}
+                        onEdit={() => setModalState({ isOpen: true, mode: 'edit', data: item, isShop: true })}
+                        onDelete={() => setConfirmDialog({ id: item.id, action: 'delete_shop', msg: 'Hapus barang ini dari daftar belanja?' })}
+                        onPin={() => {}} 
+                      />
+                    ))}
+                  </AnimatePresence>
+                </motion.div>
+              )}
+
+              {view === 'urgent' && (
+                <motion.div key={`route-urgent-${urgentType}`} variants={pageVariants} initial="initial" animate="in" exit="out" transition={transitionConfig} className="space-y-2">
+                  {(urgentType === 'Tugas' ? activeFilteredTasks : activeFilteredShop).length === 0 && (
+                    <div className="text-center mt-32 opacity-40 flex flex-col items-center">
+                      <Icon name="flame" size={72} className="mb-6" />
+                      <p className="text-lg font-bold tracking-wide">Layar bersih. Tidak ada tenggat waktu mendesak.</p>
+                    </div>
+                  )}
+                  <AnimatePresence>
+                    {(urgentType === 'Tugas' ? activeFilteredTasks : activeFilteredShop).map(item => (
+                      <ItemCard 
+                        key={item.id} item={item} isShopping={urgentType === 'Belanja'} view={view}
+                        onToggle={() => {
+                          if(urgentType === 'Tugas') setTasks(p => p.map(t => t.id === item.id ? {...t, completed: !t.completed} : t));
+                          else setShopItems(p => p.map(t => t.id === item.id ? {...t, completed: !t.completed} : t));
+                        }}
+                        onEdit={() => setModalState({ isOpen: true, mode: 'edit', data: item, isShop: urgentType === 'Belanja' })}
+                        onDelete={() => setConfirmDialog({ id: item.id, action: urgentType === 'Tugas' ? 'delete_task' : 'delete_shop', msg: 'Hapus entri ini secara permanen?' })}
+                        onPin={() => {
+                          if(urgentType === 'Tugas') setTasks(p => p.map(t => t.id === item.id ? {...t, isPinned: !t.isPinned} : t));
+                        }}
+                      />
+                    ))}
+                  </AnimatePresence>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </main>
+
+          <AnimatePresence>
+            {/* Eksposur tombol Mic direntangkan ke view shopping */}
+            {(view === 'tasks' || view === 'urgent' || view === 'shopping') && (
+              <motion.div initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 100, opacity: 0 }} className="absolute bottom-8 right-6 flex flex-col gap-4 z-40">
+                <button onClick={handleVoiceInput} className="p-5 rounded-full shadow-lg transition-transform glass-panel relative border border-white/10" style={{ color: 'var(--color-primary)' }}>
+                  {isListening && <span className="absolute inset-0 rounded-full animate-radar bg-primary/50" style={{ backgroundColor: 'var(--color-primary)' }}></span>}
+                  <Icon name="mic" size={28} />
+                </button>
+                <button onClick={() => setModalState({ isOpen: true, mode: 'create', data: null, isShop: view === 'shopping' || (view === 'urgent' && urgentType === 'Belanja') })} className="p-6 rounded-full shadow-[0_15px_40px_rgba(0,0,0,0.5)] active:scale-90 transition-transform text-white border border-white/20" style={{ backgroundColor: 'var(--color-primary)' }}>
+                  <Icon name="plus" size={36} />
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <AnimatePresence>
+            {confirmDialog && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-lg px-6">
+                <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className={`w-full max-w-sm p-8 rounded-[3rem] glass-panel shadow-2xl flex flex-col items-center text-center border ${confirmDialog.action.includes('delete') || confirmDialog.action === 'sweep' ? 'border-red-500/30' : 'border-white/10'}`}>
+                  <div className={`w-24 h-24 rounded-full flex items-center justify-center mb-6 shadow-inner ${confirmDialog.action.includes('delete') || confirmDialog.action === 'sweep' ? 'bg-red-500/20 text-red-500' : 'bg-primary/20 text-[var(--color-primary)]'}`}>
+                    <Icon name={confirmDialog.action.includes('delete') || confirmDialog.action === 'sweep' ? 'trash' : 'checkCircle'} size={48} />
+                  </div>
+                  <h3 className="text-2xl font-black mb-3">Verifikasi Tindakan</h3>
+                  <p className="text-base opacity-70 mb-8 px-2 leading-relaxed">{confirmDialog.msg}</p>
+                  <div className="flex gap-4 w-full">
+                    <button onClick={() => setConfirmDialog(null)} className="flex-1 py-5 rounded-[2rem] bg-black/20 dark:bg-white/10 font-bold text-base hover:bg-black/30 dark:hover:bg-white/20 transition-colors">Batal</button>
+                    <button onClick={() => {
+                      if (confirmDialog.action === 'delete_task') {
+                        setTasks(p => p.filter(t => t.id !== confirmDialog.id));
+                      } else if (confirmDialog.action === 'delete_shop') {
+                        setShopItems(p => p.filter(i => i.id !== confirmDialog.id));
+                      } else if (confirmDialog.action === 'sweep') {
+                        if (view === 'tasks') setTasks(p => p.filter(t => !t.completed));
+                        if (view === 'shopping') setShopItems(p => p.filter(t => !t.completed));
+                      } 
+                      setConfirmDialog(null);
+                    }} className={`flex-1 py-5 rounded-[2rem] font-bold text-white shadow-xl active:scale-95 transition-transform ${confirmDialog.action.includes('delete') || confirmDialog.action === 'sweep' ? 'bg-red-600' : ''}`} style={(confirmDialog.action !== 'delete_task' && confirmDialog.action !== 'delete_shop' && confirmDialog.action !== 'sweep') ? { backgroundColor: 'var(--color-primary)' } : {}}>
+                      Eksekusi
+                    </button>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <AnimatePresence>
+            {modalState.isOpen && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[60] flex items-end bg-black/80 backdrop-blur-lg sm:items-center sm:justify-center">
+                <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', damping: 25, stiffness: 300 }} className="w-full max-w-md p-8 sm:p-10 glass-panel rounded-t-[3rem] sm:rounded-[3rem] border-b-0 sm:border flex flex-col gap-6 max-h-[95vh] overflow-y-auto shadow-[0_-20px_60px_rgba(0,0,0,0.5)]">
+                  <div className="w-20 h-2 bg-black/20 dark:bg-white/20 rounded-full mx-auto sm:hidden mb-2" />
+                  <h2 className="text-3xl font-black mt-2 tracking-tight uppercase opacity-90">{modalState.mode === 'create' ? 'Modul Baru' : 'Revisi Entri'}</h2>
+                  
+                  <input id="modalTitle" type="text" defaultValue={modalState.data?.title || ''} placeholder="Judul / Nama barang..." className="w-full p-5 rounded-[2rem] text-xl font-bold border-none" />
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    {!modalState.isShop && (
+                      <div className="space-y-3">
+                        <label className="text-xs font-black opacity-50 block uppercase tracking-widest pl-2">Klasifikasi</label>
+                        <select id="modalCat" defaultValue={modalState.data?.category || 'Lainnya'} className="w-full p-5 rounded-[2rem] border-none text-base font-bold text-center">
+                          {Object.keys(CATEGORIES).map(c => <option key={c} value={c}>{c}</option>)}
+                        </select>
+                      </div>
+                    )}
+                    <div className={`space-y-3 ${modalState.isShop ? 'col-span-2' : ''}`}>
+                      <label className="text-xs font-black opacity-50 block uppercase tracking-widest pl-2">Titik Tenggat (Opsional)</label>
+                      <input id="modalDate" type="datetime-local" defaultValue={modalState.data?.dueDate ? new Date(modalState.data.dueDate).toISOString().slice(0,16) : ''} className="w-full p-5 rounded-[2rem] border-none text-base font-bold" />
+                    </div>
+                  </div>
+
+                  {!modalState.isShop && <textarea id="modalNotes" defaultValue={modalState.data?.notes || ''} placeholder="Catatan/Deskripsi..." className="w-full p-6 rounded-[2rem] border-none min-h-[160px] resize-none text-base font-medium leading-relaxed"></textarea>}
+                  
+                  <div className="flex gap-4 pt-6 mt-auto">
+                    <button onClick={() => setModalState({isOpen:false})} className="flex-1 py-5 rounded-[2rem] bg-black/5 dark:bg-white/10 font-bold text-base border border-black/5 dark:border-white/5 active:scale-95 transition-transform">Abaikan</button>
+                    <button onClick={() => {
+                      const title = document.getElementById('modalTitle').value;
+                      if (!title.trim()) return;
+                      const dateVal = document.getElementById('modalDate').value;
+                      const payload = { 
+                        title, 
+                        notes: modalState.isShop ? '' : document.getElementById('modalNotes').value, 
+                        dueDate: dateVal ? new Date(dateVal).toISOString() : null,
+                        category: modalState.isShop ? 'Belanja' : document.getElementById('modalCat').value
+                      };
+                      
+                      if (modalState.mode === 'create') {
+                        const newItem = { id: Date.now().toString(), createdAt: new Date().toISOString(), completed: false, notifiedExact: false, isPinned: false, ...payload };
+                        if (modalState.isShop) setShopItems(p => [newItem, ...p]);
+                        else setTasks(p => [newItem, ...p]);
+                      } else {
+                        if (modalState.isShop) setShopItems(p => p.map(t => t.id === modalState.data.id ? { ...t, notifiedExact: false, ...payload } : t));
+                        else setTasks(p => p.map(t => t.id === modalState.data.id ? { ...t, notifiedExact: false, ...payload } : t));
+                      }
+                      setModalState({isOpen:false});
+                    }} className="flex-1 py-5 rounded-[2rem] font-bold text-white shadow-xl text-base active:scale-95 transition-transform border border-white/20" style={{ backgroundColor: 'var(--color-primary)' }}>Simpan Data</button>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      );
+    }
     const root = ReactDOM.createRoot(document.getElementById('root'));
     root.render(<ErrorBoundary><App /></ErrorBoundary>);
   </script>
