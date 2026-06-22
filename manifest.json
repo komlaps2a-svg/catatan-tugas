@@ -3,6 +3,7 @@
   "short_name": "Tugas",
   "description": "Sistem Manajemen Tugas & Belanja Terpadu",
   "start_url": "./index.html",
+  "scope": ".",
   "display": "standalone",
   "background_color": "#030303",
   "theme_color": "#030303",
