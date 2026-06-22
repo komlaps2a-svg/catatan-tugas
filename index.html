@@ -7,69 +7,91 @@
   <title>Catatan Tugas & Belanja</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="./icon-192.png">
+
+  <script>
+    window.onerror = function(message, source, lineno, colno, error) {
+      document.body.innerHTML = `
+        <div style="background:#050505; color:#fca5a5; padding:2rem; height:100vh; box-sizing:border-box; font-family:monospace; display:flex; flex-direction:column; justify-content:center;">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" style="margin-bottom:20px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+          <h2 style="color:#ef4444; margin:0 0 10px 0; font-size:24px; letter-spacing:2px;">SISTEM GAGAL DIMUAT</h2>
+          <p style="margin:0 0 5px 0; font-weight:bold;">Log:</p>
+          <div style="background:#2a0808; padding:15px; border-radius:10px; border:1px solid #7f1d1d; overflow-x:auto;">
+            ${message}<br/><br/>
+            <span style="opacity:0.5">Baris: ${lineno}</span>
+          </div>
+          <p style="opacity:0.6; font-size:12px; margin-top:20px;">Ini disebabkan oleh koneksi internet yang memblokir CDN atau data memori korup.</p>
+          <button onclick="localStorage.clear(); window.location.reload();" style="margin-top:auto; padding:20px; background:#dc2626; color:white; border:none; border-radius:30px; font-weight:bold; letter-spacing:1px; cursor:pointer; text-transform:uppercase;">Hapus Cache & Muat Ulang</button>
+        </div>
+      `;
+      return true;
+    };
+  </script>
   
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = { darkMode: 'class', theme: { extend: { colors: { primary: 'var(--color-primary)' } } } }
   </script>
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js" crossorigin></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.23.6/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/framer-motion@10.16.4/dist/framer-motion.js"></script>
   
   <style>
     :root { font-size: 16px; }
-    body { 
-      margin: 0; padding: 0; 
-      -webkit-tap-highlight-color: transparent; 
-      overflow: hidden; 
-      background: var(--color-bg);
-      background-image: var(--color-gradient);
-    }
+    body { margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; overflow: hidden; background: var(--color-bg); background-image: var(--color-gradient); }
     ::-webkit-scrollbar { width: 0px; background: transparent; }
     
-    .glass-panel {
-      background: var(--color-glass);
-      backdrop-filter: blur(40px);
-      -webkit-backdrop-filter: blur(40px);
-      border: 1px solid var(--color-border);
-      box-shadow: 0 20px 50px -10px rgba(0,0,0,0.4), inset 0 1px 1px rgba(255,255,255,0.05);
-    }
-
-    .solid-panel {
-      background: var(--color-surface);
-      border: 1px solid var(--color-border);
-      box-shadow: 0 20px 50px -10px rgba(0,0,0,0.3);
-    }
+    .glass-panel { background: var(--color-glass); backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px); border: 1px solid var(--color-border); box-shadow: 0 20px 50px -10px rgba(0,0,0,0.4), inset 0 1px 1px rgba(255,255,255,0.05); }
+    .solid-panel { background: var(--color-surface); border: 1px solid var(--color-border); box-shadow: 0 20px 50px -10px rgba(0,0,0,0.3); }
     
-    input, textarea, select { 
-      background: var(--color-input); 
-      color: var(--color-text); 
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
-      border-radius: 1.5rem !important;
-      appearance: none;
-    }
+    input, textarea, select { background: var(--color-input); color: var(--color-text); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border-radius: 1.5rem !important; appearance: none; }
     input:focus, textarea:focus, select:focus { outline: 2px solid var(--color-primary); background: var(--color-input-focus); box-shadow: 0 0 20px rgba(var(--color-primary), 0.1); }
     input::placeholder, textarea::placeholder { color: var(--color-text-muted); }
+    
+    /* Strict styling for datetime inputs */
+    input[type="datetime-local"] {
+      border: 2px solid var(--color-border) !important;
+      background: var(--color-input) !important;
+      position: relative;
+    }
+    input[type="datetime-local"]:focus {
+      border-color: var(--color-primary) !important;
+    }
+    input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+      opacity: 0.6; cursor: pointer; transition: opacity 0.2s;
+    }
+    input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
+      opacity: 1;
+    }
     
     @keyframes ping-radar { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(2.5); opacity: 0; } }
     .animate-radar { animation: ping-radar 1.5s cubic-bezier(0, 0, 0.2, 1) infinite; }
   </style>
 </head>
 <body class="text-gray-900 dark:text-gray-100 transition-all duration-700">
-  <div id="root" class="max-w-md mx-auto w-full h-[100dvh] relative overflow-hidden shadow-2xl"></div>
+  
+  <div id="root" class="max-w-md mx-auto w-full h-[100dvh] relative overflow-hidden shadow-2xl">
+    <div class="flex flex-col items-center justify-center h-full bg-[#050505] text-[#f97316] font-sans">
+      <svg class="animate-spin w-12 h-12 text-[#f97316] mb-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+      <h3 class="tracking-[0.2em] text-sm font-black text-[#f97316]/80 uppercase">Memuat Sistem</h3>
+    </div>
+  </div>
 
   <script type="text/babel">
-    const { useState, useEffect, useMemo, Component, useRef } = React;
+    if (!window.React || !window.Motion) {
+      throw new Error("Kegagalan Inisialisasi Pustaka Utama (CDN Gagal).");
+    }
+
+    const { useState, useEffect, useMemo, Component, useRef, useCallback } = React;
     const { motion, AnimatePresence } = window.Motion;
 
     class ErrorBoundary extends Component {
       constructor(props) { super(props); this.state = { hasError: false, errorInfo: null }; }
       static getDerivedStateFromError(error) { return { hasError: true, errorInfo: error.toString() }; }
-      componentDidCatch(error, info) { 
-        // WHY: JSON logging memudahkan observabilitas fatal UI crash di sisi client
-        console.error(JSON.stringify({ what: "FATAL UI CRASH", where: "ErrorBoundary", why: error.message, stack: info })); 
-      }
+      componentDidCatch(error, info) { console.error("FATAL UI CRASH:", error, info); }
       render() {
         if (this.state.hasError) {
           return (
@@ -105,20 +127,14 @@
         pin: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="12" y1="17" x2="12" y2="22"></line><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"></path></svg>,
         snooze: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"></circle><polyline points="12 8 12 12 14 14"></polyline><path d="M16 8h-4v4"></path></svg>,
         sweep: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>,
-        shopping: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+        shopping: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>,
+        palette: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="13.5" cy="6.5" r=".5" fill={color}></circle><circle cx="17.5" cy="10.5" r=".5" fill={color}></circle><circle cx="8.5" cy="7.5" r=".5" fill={color}></circle><circle cx="6.5" cy="12.5" r=".5" fill={color}></circle><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"></path></svg>
       };
       return icons[name] || null;
     };
 
     const THEMES = { blue: '#3b82f6', orange: '#f97316', purple: '#8b5cf6', emerald: '#10b981', rose: '#f43f5e' };
-    
-    const CATEGORIES = {
-      'Lainnya': { color: '#64748b' },
-      'Akademik': { color: '#3b82f6' },
-      'Pekerjaan': { color: '#10b981' },
-      'Pribadi': { color: '#f43f5e' }
-    };
-
+    const CATEGORIES = { 'Lainnya': { color: '#64748b' }, 'Akademik': { color: '#3b82f6' }, 'Pekerjaan': { color: '#10b981' }, 'Pribadi': { color: '#f43f5e' } };
     const formatIDDate = (iso) => iso ? new Date(iso).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
     
     const renderFormattedNotes = (text) => {
@@ -177,18 +193,14 @@
         const now = alarmContext.currentTime;
         const playNote = (freq, startTime, duration) => {
           const osc = alarmContext.createOscillator(), gain = alarmContext.createGain();
-          osc.type = 'sine'; 
-          osc.frequency.setValueAtTime(freq, startTime);
+          osc.type = 'sine'; osc.frequency.setValueAtTime(freq, startTime);
           gain.gain.setValueAtTime(0, startTime);
           gain.gain.linearRampToValueAtTime(0.6, startTime + 0.05);
           gain.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
           osc.connect(gain); gain.connect(alarmContext.destination);
           osc.start(startTime); osc.stop(startTime + duration);
         };
-        playNote(523.25, now, 0.5);       
-        playNote(659.25, now + 0.1, 0.5); 
-        playNote(783.99, now + 0.2, 0.5);  
-        playNote(1046.50, now + 0.3, 1.0); 
+        playNote(523.25, now, 0.5); playNote(659.25, now + 0.1, 0.5); playNote(783.99, now + 0.2, 0.5); playNote(1046.50, now + 0.3, 1.0); 
       } catch(e) {}
     };
 
@@ -205,10 +217,19 @@
       }
     };
 
-    const parseVoiceCommand = (text) => {
+    const parseVoiceCommand = (text, isShoppingMode = false) => {
+      if (isShoppingMode) {
+        let cleaned = text.replace(/^(?:beli|tambahkan|tolong beli|belanja)\s+/i, '');
+        let items = cleaned.split(/,|\bdan\b|\bsama\b/g).map(s => s.trim()).filter(Boolean);
+        return items.map(title => ({
+          id: (Date.now() + Math.random()).toString(),
+          title: title.charAt(0).toUpperCase() + title.slice(1),
+          dueDate: null, completed: false, notifiedExact: false, createdAt: new Date().toISOString(), category: 'Belanja'
+        }));
+      }
+
       let draft = { title: "", notes: "", dueDate: null, category: "Lainnya" };
       let lower = text.toLowerCase();
-      
       const descMatch = lower.match(/(?:dengan deskripsi|deskripsi|catatan)\s+(.*)/);
       if (descMatch) {
         draft.notes = text.substring(descMatch.index + descMatch[0].indexOf(descMatch[1]));
@@ -268,20 +289,15 @@
       const catColor = CATEGORIES[item.category]?.color || '#64748b';
 
       return (
-        <div className="relative w-full mb-5">
-          <div className="absolute inset-y-0 right-0 w-[50%] bg-red-600 rounded-[2.5rem] flex items-center justify-end pr-8 shadow-inner" style={{ zIndex: 0 }}>
-            <span className="text-white font-black tracking-widest flex items-center gap-3 text-lg opacity-80">
-              <Icon name="trash" size={36} />
-            </span>
+        <div className="relative w-full mb-4 group">
+          <div className="absolute inset-y-0 right-0 w-[50%] bg-red-600 rounded-[2.5rem] flex items-center justify-end pr-8" style={{ zIndex: 0 }}>
+            <span className="text-white font-black tracking-widest flex items-center gap-3 text-lg opacity-80"><Icon name="trash" size={32} /></span>
           </div>
 
           <motion.div 
-            layout 
-            drag="x" 
-            dragConstraints={{ left: 0, right: 0 }} 
-            dragElastic={{ left: 0.5, right: 0 }}
+            layout drag="x" dragConstraints={{ left: 0, right: 0 }} dragElastic={{ left: 0.5, right: 0 }}
             onDragEnd={(e, info) => { if (info.offset.x < -80) onDelete(); }}
-            className={`solid-panel p-6 rounded-[2.5rem] flex items-start gap-5 relative z-10 w-full transition-colors ${item.isPinned ? 'border-[var(--color-primary)] shadow-[0_0_20px_rgba(var(--color-primary),0.2)]' : ''}`}
+            className={`solid-panel p-6 rounded-[2.5rem] flex items-start gap-4 relative z-10 w-full transition-shadow ${item.isPinned ? 'border-[var(--color-primary)] shadow-[0_0_20px_rgba(var(--color-primary),0.2)]' : ''}`}
           >
             <button onClick={(e) => { e.stopPropagation(); onToggle(); }} className="mt-1 shrink-0 active:scale-75 transition-transform">
               <Icon name={item.completed ? 'checkCircle' : 'circle'} color={item.completed ? 'var(--color-primary)' : 'var(--color-text-muted)'} size={36} />
@@ -290,14 +306,10 @@
             <div className={`flex-1 min-w-0 pt-0.5 ${item.completed ? 'opacity-40 grayscale' : ''}`}>
               {!isShopping && (
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="px-2 py-0.5 rounded-md text-[10px] font-black tracking-widest uppercase text-white shadow-sm" style={{ backgroundColor: catColor }}>
-                    {item.category || 'Lainnya'}
-                  </span>
+                  <span className="px-2 py-0.5 rounded-md text-[10px] font-black tracking-widest uppercase text-white shadow-sm" style={{ backgroundColor: catColor }}>{item.category || 'Lainnya'}</span>
                 </div>
               )}
-              
-              <h3 className={`font-bold text-xl leading-tight ${item.completed ? 'line-through' : ''}`}>{item.title}</h3>
-              
+              <h3 className="font-bold text-xl leading-tight break-words">{item.title}</h3>
               {(!isShopping && item.notes) && (
                 <div className="mt-2 text-[15px] opacity-80 leading-relaxed font-medium">
                   {isExpanded || !isLongNote ? renderFormattedNotes(item.notes) : renderFormattedNotes(item.notes.substring(0, 80) + '...')}
@@ -308,7 +320,6 @@
                   )}
                 </div>
               )}
-              
               <div className="mt-4 flex flex-col gap-2 pt-3 border-t border-black/10 dark:border-white/10 text-[13px] font-bold opacity-80">
                 <span className="flex items-center gap-2"><Icon name="plus" size={16} /> {formatIDDate(item.createdAt)}</span>
                 {item.dueDate && <span className={`flex items-center gap-2 ${isOverdue ? 'text-red-500' : ''}`}><Icon name="clock" size={16} /> {formatIDDate(item.dueDate)}</span>}
@@ -327,23 +338,22 @@
 
     function App() {
       const [tasks, setTasks] = useState(() => {
-        try { const local = localStorage.getItem('catatan_tugas_v5_data'); return local ? JSON.parse(local) : []; } 
+        try { const local = localStorage.getItem('catatan_tugas_v6_data'); return local ? JSON.parse(local) : []; } 
         catch(e) { return []; }
       });
       const [shopItems, setShopItems] = useState(() => {
-        try { const shop = localStorage.getItem('catatan_tugas_v5_shop'); return shop ? JSON.parse(shop) : []; } 
+        try { const shop = localStorage.getItem('catatan_tugas_v6_shop'); return shop ? JSON.parse(shop) : []; } 
         catch(e) { return []; }
       });
       const [settings, setSettings] = useState(() => {
-        try { const sets = localStorage.getItem('catatan_tugas_v5_sets'); return sets ? JSON.parse(sets) : { theme: 'orange', mode: 'dark', soundEnabled: true }; } 
+        try { const sets = localStorage.getItem('catatan_tugas_v6_sets'); return sets ? JSON.parse(sets) : { theme: 'orange', mode: 'dark', soundEnabled: true }; } 
         catch(e) { return { theme: 'orange', mode: 'dark', soundEnabled: true }; }
       });
 
-      const [view, setView] = useState('tasks');
+      const [view, setView] = useState('tasks'); 
       const [activeTab, setActiveTab] = useState('Aktif');
       const [shopTab, setShopTab] = useState('Aktif');
-      const [urgentType, setUrgentType] = useState('Tugas');
-      
+      const [urgentType, setUrgentType] = useState('Tugas'); 
       const [searchQuery, setSearchQuery] = useState('');
       const [urgentFilter, setUrgentFilter] = useState(10 * 3600 * 1000); 
       
@@ -363,9 +373,9 @@
 
       useEffect(() => {
         const forceSave = () => {
-          localStorage.setItem('catatan_tugas_v5_data', JSON.stringify(tasksRef.current));
-          localStorage.setItem('catatan_tugas_v5_shop', JSON.stringify(shopRef.current));
-          localStorage.setItem('catatan_tugas_v5_sets', JSON.stringify(settingsRef.current));
+          localStorage.setItem('catatan_tugas_v6_data', JSON.stringify(tasksRef.current));
+          localStorage.setItem('catatan_tugas_v6_shop', JSON.stringify(shopRef.current));
+          localStorage.setItem('catatan_tugas_v6_sets', JSON.stringify(settingsRef.current));
         };
         window.addEventListener('beforeunload', forceSave);
         window.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') forceSave(); });
@@ -380,27 +390,17 @@
       useEffect(() => {
         const root = document.documentElement;
         if (settings.mode === 'dark') {
-          root.classList.add('dark');
-          root.style.setProperty('--color-bg', '#030303');
-          root.style.setProperty('--color-surface', '#0a0a0a'); 
+          root.classList.add('dark'); root.style.setProperty('--color-bg', '#030303'); root.style.setProperty('--color-surface', '#0a0a0a');
           root.style.setProperty('--color-gradient', 'radial-gradient(circle at top left, #1a1a1a, #030303)');
-          root.style.setProperty('--color-glass', 'rgba(15, 15, 15, 0.6)');
-          root.style.setProperty('--color-border', 'rgba(255, 255, 255, 0.04)');
-          root.style.setProperty('--color-input', 'rgba(255, 255, 255, 0.03)');
-          root.style.setProperty('--color-input-focus', 'rgba(0, 0, 0, 0.6)');
-          root.style.setProperty('--color-text', '#ffffff');
-          root.style.setProperty('--color-text-muted', 'rgba(255, 255, 255, 0.3)');
+          root.style.setProperty('--color-glass', 'rgba(15, 15, 15, 0.6)'); root.style.setProperty('--color-border', 'rgba(255, 255, 255, 0.2)');
+          root.style.setProperty('--color-input', 'rgba(255, 255, 255, 0.05)'); root.style.setProperty('--color-input-focus', 'rgba(0, 0, 0, 0.6)');
+          root.style.setProperty('--color-text', '#ffffff'); root.style.setProperty('--color-text-muted', 'rgba(255, 255, 255, 0.3)');
         } else {
-          root.classList.remove('dark');
-          root.style.setProperty('--color-bg', '#f8fafc');
-          root.style.setProperty('--color-surface', '#ffffff'); 
+          root.classList.remove('dark'); root.style.setProperty('--color-bg', '#f8fafc'); root.style.setProperty('--color-surface', '#ffffff');
           root.style.setProperty('--color-gradient', 'radial-gradient(circle at top left, #ffffff, #f1f5f9)');
-          root.style.setProperty('--color-glass', 'rgba(255, 255, 255, 0.75)');
-          root.style.setProperty('--color-border', 'rgba(0, 0, 0, 0.04)');
-          root.style.setProperty('--color-input', 'rgba(0, 0, 0, 0.03)');
-          root.style.setProperty('--color-input-focus', 'rgba(255, 255, 255, 1)');
-          root.style.setProperty('--color-text', '#0f172a');
-          root.style.setProperty('--color-text-muted', 'rgba(0, 0, 0, 0.4)');
+          root.style.setProperty('--color-glass', 'rgba(255, 255, 255, 0.75)'); root.style.setProperty('--color-border', 'rgba(0, 0, 0, 0.2)');
+          root.style.setProperty('--color-input', 'rgba(0, 0, 0, 0.05)'); root.style.setProperty('--color-input-focus', 'rgba(255, 255, 255, 1)');
+          root.style.setProperty('--color-text', '#0f172a'); root.style.setProperty('--color-text-muted', 'rgba(0, 0, 0, 0.4)');
         }
         root.style.setProperty('--color-primary', THEMES[settings.theme]);
       }, [settings]);
@@ -420,38 +420,28 @@
       useEffect(() => {
         const interval = setInterval(() => {
           if (!settings.soundEnabled || activeAlarmTask) return;
-          const now = Date.now();
-          let triggeredTask = null;
-          
+          const now = Date.now(); let triggeredTask = null;
           const processItems = (items, setter) => {
             let mutated = false;
             const updated = items.map(t => {
               if (t.completed || !t.dueDate || t.notifiedExact) return t;
               const diff = new Date(t.dueDate).getTime() - now;
-              if (diff <= 0 && diff > -300000 && !triggeredTask) {
-                triggeredTask = t; mutated = true; return { ...t, notifiedExact: true };
-              }
+              if (diff <= 0 && diff > -300000 && !triggeredTask) { triggeredTask = t; mutated = true; return { ...t, notifiedExact: true }; }
               return t;
             });
             if (mutated) setter(updated);
           };
-
           processItems(tasks, setTasks);
           if(!triggeredTask) processItems(shopItems, setShopItems);
-          
           if (triggeredTask) {
-            setActiveAlarmTask(triggeredTask);
-            triggerNativeNotification("Batas Waktu!", `Aktivitas "${triggeredTask.title}" telah mencapai tenggat waktu.`);
-            if(alarmInterval) clearInterval(alarmInterval);
-            playModernRingtone(); 
-            alarmInterval = setInterval(playModernRingtone, 2500); 
+            setActiveAlarmTask(triggeredTask); triggerNativeNotification("Batas Waktu!", `Aktivitas "${triggeredTask.title}" mencapai tenggat waktu.`);
+            if(alarmInterval) clearInterval(alarmInterval); playModernRingtone(); alarmInterval = setInterval(playModernRingtone, 2500); 
           }
         }, 1000);
         return () => clearInterval(interval);
       }, [settings.soundEnabled, activeAlarmTask, tasks, shopItems]);
 
       const stopAlarm = () => { clearInterval(alarmInterval); alarmInterval = null; setActiveAlarmTask(null); };
-
       const snoozeAlarm = () => {
         if (!activeAlarmTask) return;
         const newTime = new Date(Date.now() + 600000).toISOString();
@@ -460,178 +450,109 @@
         stopAlarm();
       };
 
-      const handleVoiceInput = () => {
-        try {
-          const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-          if (!SpeechRec) { alert("Sistem operasi menolak akses instrumen mikrofon."); return; }
-          const recognition = new SpeechRec();
-          recognition.lang = 'id-ID';
-          recognition.start();
-          setIsListening(true);
-          
-          recognition.onresult = (event) => {
-            const transcript = event.results[0][0].transcript;
-            setIsListening(false);
-            
-            // WHY: Injeksi NLP spesifik untuk menu belanja memecah string berdasarkan konjungsi/tanda baca koma.
-            // Memastikan efisiensi batch insert tanpa membuka modal berulang kali.
-            if (view === 'shopping') {
-              const cleaned = transcript.replace(/^beli\s+/i, '');
-              const items = cleaned.split(/,|\bdan\b|\bserta\b/i).map(i => i.trim()).filter(i => i.length > 0);
-              
-              if (items.length > 0) {
-                const newEntries = items.map((itemName, idx) => ({
-                  id: Date.now().toString() + idx,
-                  title: itemName.charAt(0).toUpperCase() + itemName.slice(1),
-                  dueDate: null, 
-                  completed: false,
-                  notifiedExact: false,
-                  createdAt: new Date().toISOString()
-                }));
-                setShopItems(p => [...newEntries, ...p]);
-              }
-            } else {
-              setModalState({ isOpen: true, mode: 'create', data: parseVoiceCommand(transcript), isShop: false });
-            }
-          };
-          recognition.onerror = () => setIsListening(false);
-          recognition.onend = () => setIsListening(false);
-        } catch (error) {
+      const handleVoiceInput = useCallback(() => {
+        const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRec) { alert("Sistem operasi menolak akses mikrofon."); return; }
+        const rec = new SpeechRec(); rec.lang = 'id-ID'; setIsListening(true); rec.start();
+        rec.onresult = (e) => {
+          const parsed = parseVoiceCommand(e.results[0][0].transcript, view === 'shopping');
+          if(Array.isArray(parsed)) { setShopItems(p => [...parsed, ...p]); } 
+          else { setModalState({ isOpen: true, mode: 'create', data: parsed, isShop: view === 'shopping' }); }
           setIsListening(false);
-          console.error(JSON.stringify({what: "Voice Engine Error", where: "handleVoiceInput", why: error.message}));
-        }
-      };
+        };
+        rec.onerror = () => setIsListening(false); rec.onend = () => setIsListening(false);
+      }, [view]);
 
       const handleQuickAddShop = () => {
         if (!shopInputTitle.trim()) return;
-        const newItem = {
-          id: Date.now().toString(),
-          title: shopInputTitle.trim(),
-          dueDate: shopInputDate ? new Date(shopInputDate).toISOString() : null,
-          completed: false,
-          notifiedExact: false,
-          createdAt: new Date().toISOString()
-        };
-        setShopItems(p => [newItem, ...p]);
-        setShopInputTitle(''); setShopInputDate('');
-        setSearchQuery('');
+        setShopItems(p => [{ id: Date.now().toString(), title: shopInputTitle.trim(), dueDate: shopInputDate ? new Date(shopInputDate).toISOString() : null, completed: false, notifiedExact: false, createdAt: new Date().toISOString(), category: 'Belanja' }, ...p]);
+        setShopInputTitle(''); setShopInputDate(''); setSearchQuery('');
       };
 
       const getActiveItems = (sourceList, tabFilter) => {
-        const query = searchQuery.toLowerCase();
-        let source = sourceList;
-
+        const query = searchQuery.toLowerCase(); let source = sourceList;
         if (view === 'urgent') {
           const now = Date.now();
-          source = sourceList.filter(t => {
-            if (t.completed || !t.dueDate) return false;
-            const diff = new Date(t.dueDate).getTime() - now;
-            return diff <= urgentFilter && diff > -86400000;
-          });
+          source = sourceList.filter(t => { if (t.completed || !t.dueDate) return false; const diff = new Date(t.dueDate).getTime() - now; return diff <= urgentFilter && diff > -86400000; });
         } else {
-          source = sourceList.filter(t => {
-            if (tabFilter === 'Selesai') return t.completed;
-            if (tabFilter === 'Tertunda') return !t.completed && t.dueDate && new Date(t.dueDate).getTime() < Date.now();
-            return !t.completed; 
-          });
+          source = sourceList.filter(t => { if (tabFilter === 'Selesai') return t.completed; if (tabFilter === 'Tertunda') return !t.completed && t.dueDate && new Date(t.dueDate).getTime() < Date.now(); return !t.completed; });
         }
-
-        return source.filter(t => {
-          if (!query) return true;
-          const target = `${t.title} ${t.notes || ''} ${t.category || ''} ${formatIDDate(t.createdAt)} ${formatIDDate(t.dueDate)}`.toLowerCase();
-          return target.includes(query);
-        }).sort((a,b) => {
-          if (a.isPinned && !b.isPinned) return -1;
-          if (!a.isPinned && b.isPinned) return 1;
-          const tA = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
-          const tB = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
-          return tA - tB;
+        return source.filter(t => !query || `${t.title} ${t.notes || ''}`.toLowerCase().includes(query)).sort((a,b) => {
+          if (a.isPinned && !b.isPinned) return -1; if (!a.isPinned && b.isPinned) return 1;
+          return (a.dueDate ? new Date(a.dueDate).getTime() : Infinity) - (b.dueDate ? new Date(b.dueDate).getTime() : Infinity);
         });
+      };
+
+      const handleRefreshButton = (e) => {
+        const el = e.currentTarget;
+        el.classList.add('rotate-180');
+        setTimeout(() => {
+          el.classList.remove('rotate-180');
+          window.location.reload(true);
+        }, 400);
       };
 
       const activeFilteredTasks = useMemo(() => getActiveItems(tasks, activeTab), [tasks, activeTab, searchQuery, view, urgentFilter]);
       const activeFilteredShop = useMemo(() => getActiveItems(shopItems, shopTab), [shopItems, shopTab, searchQuery, view, urgentFilter]);
-      
-      const forceRefresh = () => window.location.reload(true);
       const completionRate = tasks.length === 0 ? 0 : Math.round((tasks.filter(t => t.completed).length / tasks.length) * 100);
-
       const transitionConfig = { type: "spring", stiffness: 400, damping: 30 };
       const pageVariants = { initial: { opacity: 0, x: 20 }, in: { opacity: 1, x: 0 }, out: { opacity: 0, x: -20 } };
 
       return (
         <div className="w-full h-full flex flex-col relative overflow-hidden">
-          
           <AnimatePresence>
             {activeAlarmTask && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/90 backdrop-blur-xl px-6 text-center">
-                <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 1.2 }} className="w-32 h-32 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center mb-8 shadow-[0_0_50px_rgba(220,38,38,0.3)]">
-                  <Icon name="bell" size={64} />
-                </motion.div>
-                <h2 className="text-5xl font-black text-white tracking-widest mb-4 uppercase text-red-500">Batas Waktu</h2>
+                <div className="w-28 h-28 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center mb-8 shadow-inner"><Icon name="bell" size={56} /></div>
+                <h2 className="text-4xl font-black text-white tracking-widest mb-4 uppercase text-red-500">Batas Waktu</h2>
                 <p className="text-3xl font-bold text-white mb-16 px-4 leading-relaxed">"{activeAlarmTask.title}"</p>
                 <div className="flex flex-col gap-5 w-full max-w-sm">
-                  <button onClick={stopAlarm} className="w-full py-6 rounded-[2rem] bg-red-600 text-white font-black text-2xl tracking-widest shadow-[0_0_40px_rgba(220,38,38,0.6)] active:scale-95 transition-transform">MATIKAN ALARM</button>
-                  <button onClick={snoozeAlarm} className="w-full py-5 rounded-[2rem] bg-white/10 text-white font-bold text-xl tracking-widest border border-white/20 active:scale-95 transition-transform flex items-center justify-center gap-3"><Icon name="snooze" size={28} /> TUNDA 10 MENIT</button>
+                  <button onClick={stopAlarm} className="w-full py-6 rounded-[2rem] bg-red-600 text-white font-black text-2xl tracking-widest shadow-[0_0_40px_rgba(220,38,38,0.6)]">MATIKAN ALARM</button>
+                  <button onClick={snoozeAlarm} className="w-full py-5 rounded-[2rem] bg-white/10 text-white font-bold text-xl tracking-widest border border-white/20 flex items-center justify-center gap-3"><Icon name="snooze" size={28} /> TUNDA 10 MENIT</button>
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
 
-          <div className="absolute top-[-10%] left-[-20%] w-[80%] h-[50%] rounded-[50%] opacity-[0.12] blur-[120px] pointer-events-none transition-colors duration-1000" style={{ backgroundColor: 'var(--color-primary)' }}></div>
-          <div className="absolute bottom-[-10%] right-[-20%] w-[60%] h-[40%] rounded-[50%] opacity-[0.08] blur-[100px] pointer-events-none transition-colors duration-1000" style={{ backgroundColor: 'var(--color-primary)' }}></div>
-
-          <header className="shrink-0 px-6 pt-12 pb-6 z-30 glass-panel rounded-b-[3rem] flex flex-col gap-6 relative border-t-0 border-x-0">
-            {/* Relokasi Search Global Header */}
-            <div className="flex justify-between items-start gap-2">
-              <div className="flex-1 min-w-0">
-                <h1 className="text-2xl sm:text-3xl font-black tracking-tight flex items-center gap-2 truncate" style={{ color: 'var(--color-primary)' }}>
-                  {view === 'tasks' ? 'Catatan Tugas' : view === 'urgent' ? <><Icon name="flame" size={28}/> Mendesak</> : view === 'shopping' ? <><Icon name="shopping" size={28}/> Belanja</> : 'Pengaturan'}
+          <header className="shrink-0 px-6 pt-12 pb-6 z-30 glass-panel rounded-b-[3rem] flex flex-col gap-5 relative border-0 shadow-inner">
+            <div className="flex justify-between items-center gap-3">
+              <div>
+                <h1 className="text-2xl font-black tracking-tight" style={{ color: 'var(--color-primary)' }}>
+                  {view === 'tasks' ? 'Catatan Tugas' : view === 'urgent' ? 'Mendesak' : view === 'shopping' ? 'Belanja' : 'Pengaturan'}
                 </h1>
-                {view === 'tasks' && <p className="text-sm font-bold opacity-60 mt-1 uppercase tracking-widest">Target Tuntas: {completionRate}%</p>}
+                {view === 'tasks' && <p className="text-[11px] font-bold opacity-60 uppercase tracking-widest">Tuntas: {completionRate}%</p>}
               </div>
-
-              <div className="flex items-center gap-2 shrink-0">
-                <div className="relative">
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 opacity-50"><Icon name="search" size={16} /></div>
-                  <input type="text" placeholder="Cari..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="w-[110px] sm:w-[150px] py-2 pl-9 pr-3 rounded-full text-xs font-medium border-none shadow-inner" />
-                </div>
-                <button onClick={forceRefresh} className="p-2.5 rounded-full bg-black/5 dark:bg-white/5 active:rotate-180 transition-all duration-500 border border-black/5 dark:border-white/5">
-                  <Icon name="refresh" size={18} />
-                </button>
+              <div className="flex items-center gap-2 flex-1 justify-end">
+                {view !== 'settings' && (
+                  <div className="relative w-full max-w-[150px]">
+                    <Icon name="search" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 opacity-40" />
+                    <input type="text" placeholder="Cari..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="w-full py-1.5 pl-9 pr-3 rounded-full text-xs font-semibold bg-black/10 dark:bg-black/40 border border-white/5" />
+                  </div>
+                )}
+                <button onClick={handleRefreshButton} className="p-2.5 rounded-full bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 transition-transform duration-500 ease-in-out hover:scale-105 active:scale-95"><Icon name="refresh" size={20} /></button>
               </div>
             </div>
 
-            <div className="flex gap-1 bg-black/5 dark:bg-white/5 p-1.5 rounded-full border border-black/5 dark:border-white/5 w-full justify-between">
-              <button onClick={() => setView('tasks')} className={`flex-1 py-3 rounded-full flex justify-center transition-all ${view==='tasks'?'bg-white dark:bg-black shadow-lg':''}`} style={{ color: view==='tasks'?'var(--color-primary)':'' }}><Icon name="checkCircle" size={24}/></button>
-              <button onClick={() => setView('shopping')} className={`flex-1 py-3 rounded-full flex justify-center transition-all ${view==='shopping'?'bg-white dark:bg-black shadow-lg text-[var(--color-primary)]':''}`} style={{ color: view==='shopping'?'var(--color-primary)':'' }}><Icon name="shopping" size={24}/></button>
-              <button onClick={() => setView('urgent')} className={`flex-1 py-3 rounded-full flex justify-center transition-all ${view==='urgent'?'bg-white dark:bg-black shadow-lg text-red-500':''}`}><Icon name="flame" size={24}/></button>
-              <button onClick={() => setView('settings')} className={`flex-1 py-3 rounded-full flex justify-center transition-all ${view==='settings'?'bg-white dark:bg-black shadow-lg':''}`} style={{ color: view==='settings'?'var(--color-primary)':'' }}><Icon name="settings" size={24}/></button>
+            <div className="flex gap-1 bg-black/5 dark:bg-white/5 p-1.5 rounded-full border border-black/5 dark:border-white/5 w-full justify-between shadow-inner">
+              <button onClick={() => { setView('tasks'); setSearchQuery(''); }} className={`flex-1 py-3 rounded-full flex justify-center transition-all ${view==='tasks'?'bg-white dark:bg-black shadow-lg':''}`} style={{ color: view==='tasks'?'var(--color-primary)':'' }}><Icon name="checkCircle" size={22}/></button>
+              <button onClick={() => { setView('shopping'); setSearchQuery(''); }} className={`flex-1 py-3 rounded-full flex justify-center transition-all ${view==='shopping'?'bg-white dark:bg-black shadow-lg':''}`} style={{ color: view==='shopping'?'var(--color-primary)':'' }}><Icon name="shopping" size={22}/></button>
+              <button onClick={() => { setView('urgent'); setSearchQuery(''); }} className={`flex-1 py-3 rounded-full flex justify-center transition-all ${view==='urgent'?'bg-white dark:bg-black shadow-lg text-red-500':''}`}><Icon name="flame" size={22}/></button>
+              <button onClick={() => { setView('settings'); setSearchQuery(''); }} className={`flex-1 py-3 rounded-full flex justify-center transition-all ${view==='settings'?'bg-white dark:bg-black shadow-lg':''}`} style={{ color: view==='settings'?'var(--color-primary)':'' }}><Icon name="settings" size={22}/></button>
             </div>
 
-            {view === 'tasks' && (
-              <div className="flex rounded-[2rem] p-2 bg-black/5 dark:bg-black/30 border border-black/5 dark:border-white/5 relative z-10 shadow-inner">
-                {['Aktif', 'Tertunda', 'Selesai'].map(t => (
-                  <button key={t} onClick={() => setActiveTab(t)} className="flex-1 py-3 text-[14px] font-bold relative z-10 transition-colors tracking-wide" style={{ color: activeTab === t ? '#fff' : 'var(--color-text-muted)' }}>
-                    {activeTab === t && <motion.div layoutId="tabMarker" className="absolute inset-0 rounded-[1.5rem] shadow-md -z-10" style={{ backgroundColor: 'var(--color-primary)' }} transition={{ type: "spring", bounce: 0.2 }} />}
-                    {t}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {/* Restrukturisasi Input Belanja - 1 Baris */}
             {view === 'shopping' && (
-              <div className="flex flex-col gap-3">
-                <div className="flex items-center gap-2 w-full">
-                  <input type="text" value={shopInputTitle} onChange={e=>setShopInputTitle(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleQuickAddShop()} placeholder="Barang..." className="flex-1 min-w-0 py-3 px-4 rounded-[2rem] border-none text-sm font-bold shadow-inner" />
-                  <input type="datetime-local" value={shopInputDate} onChange={e=>setShopInputDate(e.target.value)} className="w-[130px] shrink-0 py-3 px-2 rounded-[2rem] border-none text-[11px] font-bold shadow-inner text-center leading-none" />
-                  <button onClick={handleQuickAddShop} className="shrink-0 w-12 h-12 rounded-full text-white shadow-xl active:scale-95 flex items-center justify-center transition-transform" style={{ backgroundColor: 'var(--color-primary)' }}><Icon name="plus" size={22}/></button>
+              <div className="w-full flex flex-col gap-3 mt-1">
+                <div className="flex gap-2 items-center w-full bg-black/10 dark:bg-black/40 p-2 rounded-[2rem] border border-black/5 dark:border-white/5 shadow-inner">
+                  <input type="text" value={shopInputTitle} onChange={e=>setShopInputTitle(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleQuickAddShop()} placeholder="Tambah belanjaan..." className="flex-1 bg-transparent border-none py-2 px-4 text-base font-bold focus:outline-none focus:ring-0 w-[45%]" />
+                  <div className="relative pl-1 border-l-2 border-black/10 dark:border-white/10 shrink-0">
+                    <input type="datetime-local" value={shopInputDate} onChange={e=>setShopInputDate(e.target.value)} className="rounded-[1rem] text-[11px] font-bold p-2.5 max-w-[130px] cursor-pointer" />
+                  </div>
+                  <button onClick={handleQuickAddShop} className="p-3 rounded-full text-white shadow-md shrink-0 ml-1" style={{ backgroundColor: 'var(--color-primary)' }}><Icon name="plus" size={20}/></button>
                 </div>
-                
-                <div className="flex rounded-[2rem] p-2 bg-black/5 dark:bg-black/30 border border-black/5 dark:border-white/5 relative z-10 shadow-inner mt-2">
+                <div className="flex rounded-[2rem] p-1.5 bg-black/5 dark:bg-black/20 border border-black/5 dark:border-white/5 shadow-inner">
                   {['Aktif', 'Selesai'].map(t => (
-                    <button key={t} onClick={() => setShopTab(t)} className="flex-1 py-3 text-[14px] font-bold relative z-10 transition-colors tracking-wide" style={{ color: shopTab === t ? '#fff' : 'var(--color-text-muted)' }}>
-                      {shopTab === t && <motion.div layoutId="shopTabMarker" className="absolute inset-0 rounded-[1.5rem] shadow-md -z-10" style={{ backgroundColor: 'var(--color-primary)' }} transition={{ type: "spring", bounce: 0.2 }} />}
+                    <button key={t} onClick={() => setShopTab(t)} className="flex-1 py-2.5 text-xs font-black uppercase tracking-wider relative z-10 transition-colors" style={{ color: shopTab === t ? '#fff' : 'var(--color-text-muted)' }}>
+                      {shopTab === t && <motion.div layoutId="shopTabMarker" className="absolute inset-0 rounded-[1.5rem] shadow-md -z-10" style={{ backgroundColor: 'var(--color-primary)' }} />}
                       {t}
                     </button>
                   ))}
@@ -639,155 +560,111 @@
               </div>
             )}
 
+            {view === 'tasks' && (
+              <div className="flex rounded-[2rem] p-1.5 bg-black/5 dark:bg-black/20 border border-black/5 dark:border-white/5 shadow-inner">
+                {['Aktif', 'Tertunda', 'Selesai'].map(t => (
+                  <button key={t} onClick={() => setActiveTab(t)} className="flex-1 py-2.5 text-xs font-black uppercase tracking-wider relative z-10 transition-colors" style={{ color: activeTab === t ? '#fff' : 'var(--color-text-muted)' }}>
+                    {activeTab === t && <motion.div layoutId="tabMarker" className="absolute inset-0 rounded-[1.5rem] shadow-md -z-10" style={{ backgroundColor: 'var(--color-primary)' }} />}
+                    {t}
+                  </button>
+                ))}
+              </div>
+            )}
+
             {view === 'urgent' && (
               <div className="flex flex-col gap-3">
                 <div className="flex gap-2">
-                  <button onClick={() => setUrgentType('Tugas')} className={`flex-1 py-3 rounded-[2rem] font-bold text-sm transition-all border ${urgentType==='Tugas'?'border-[var(--color-primary)] text-[var(--color-primary)] bg-primary/10':'border-transparent bg-black/5 dark:bg-white/5 opacity-60'}`}>Mode Tugas</button>
-                  <button onClick={() => setUrgentType('Belanja')} className={`flex-1 py-3 rounded-[2rem] font-bold text-sm transition-all border ${urgentType==='Belanja'?'border-[var(--color-primary)] text-[var(--color-primary)] bg-primary/10':'border-transparent bg-black/5 dark:bg-white/5 opacity-60'}`}>Mode Belanja</button>
+                  <button onClick={() => setUrgentType('Tugas')} className={`flex-1 py-2.5 rounded-[2rem] font-black uppercase tracking-wider text-xs border ${urgentType==='Tugas'?'border-[var(--color-primary)] text-[var(--color-primary)] bg-primary/10 shadow-sm':'border-transparent bg-black/5 dark:bg-white/5 opacity-60'}`}>Tugas</button>
+                  <button onClick={() => setUrgentType('Belanja')} className={`flex-1 py-2.5 rounded-[2rem] font-black uppercase tracking-wider text-xs border ${urgentType==='Belanja'?'border-[var(--color-primary)] text-[var(--color-primary)] bg-primary/10 shadow-sm':'border-transparent bg-black/5 dark:bg-white/5 opacity-60'}`}>Belanjaan</button>
                 </div>
-                <div className="flex overflow-x-auto gap-3 pb-2 pt-1 scrollbar-hide px-1">
+                <div className="flex overflow-x-auto gap-2.5 pb-1 pt-0.5 scrollbar-hide">
                   {[{ label: '1 Jam', val: 3600 * 1000 }, { label: '10 Jam', val: 10 * 3600 * 1000 }, { label: '1 Hari', val: 24 * 3600 * 1000 }, { label: '1 Minggu', val: 7 * 24 * 3600 * 1000 }, { label: '2 Minggu++', val: 9999 * 24 * 3600 * 1000 }].map(f => (
-                    <button key={f.label} onClick={() => setUrgentFilter(f.val)} className={`px-5 py-3 rounded-[2rem] text-xs uppercase tracking-widest font-extrabold whitespace-nowrap transition-all border ${urgentFilter === f.val ? 'border-red-500 text-red-500 bg-red-500/15 shadow-[0_0_20px_rgba(239,68,68,0.2)]' : 'border-transparent bg-black/5 dark:bg-white/5 opacity-60 hover:opacity-100'}`}>
-                      {f.label}
-                    </button>
+                    <button key={f.label} onClick={() => setUrgentFilter(f.val)} className={`px-4 py-2 rounded-[2rem] text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border ${urgentFilter === f.val ? 'border-red-500 text-red-500 bg-red-500/15 shadow-sm' : 'border-transparent bg-black/5 dark:bg-white/5 opacity-60'}`}>{f.label}</button>
                   ))}
                 </div>
               </div>
             )}
             
             {((view === 'tasks' && activeTab === 'Selesai' && tasks.some(t => t.completed)) || (view === 'shopping' && shopTab === 'Selesai' && shopItems.some(t => t.completed))) && (
-              <button onClick={() => setConfirmDialog({ id: 'sweep', action: 'sweep', msg: 'Hapus permanen seluruh entri yang telah tuntas di kategori ini?' })} className="w-full mt-2 py-4 rounded-[2rem] bg-red-500/10 text-red-500 font-bold border border-red-500/20 active:scale-95 transition-transform flex items-center justify-center gap-3">
-                <Icon name="sweep" size={24} /> Bersihkan Arsip Selesai
-              </button>
+              <button onClick={() => setConfirmDialog({ id: 'sweep', action: 'sweep', msg: 'Hapus permanen seluruh arsip tuntas?' })} className="w-full py-3.5 rounded-[2rem] bg-red-500/10 text-red-500 font-bold border border-red-500/20 flex items-center justify-center gap-2 text-sm tracking-wide shadow-sm"><Icon name="sweep" size={20} /> Bersihkan Arsip Selesai</button>
             )}
           </header>
 
           <main className="flex-1 px-5 pt-6 pb-40 overflow-y-auto z-10 relative scroll-smooth">
             <AnimatePresence mode="wait">
-              {view === 'settings' && (
+              {view === 'settings' ? (
                 <motion.div key="route-settings" variants={pageVariants} initial="initial" animate="in" exit="out" transition={transitionConfig} className="space-y-6">
-                  <div className="p-8 rounded-[3rem] glass-panel space-y-6 border border-black/5 dark:border-white/5">
-                    <h3 className="text-xs font-black opacity-40 tracking-widest uppercase">Pencahayaan Visual</h3>
-                    <div className="grid grid-cols-2 gap-5">
-                      <button onClick={()=>setSettings(s=>({...s, mode:'light'}))} className={`p-6 rounded-[2rem] flex flex-col items-center gap-3 border-2 transition-all ${settings.mode==='light'?'border-[var(--color-primary)] text-[var(--color-primary)] bg-primary/5 shadow-md':'border-transparent bg-black/5 dark:bg-white/5 opacity-60'}`}>
-                        <Icon name="sun" size={32}/> <span className="text-sm font-bold">Terang</span>
-                      </button>
-                      <button onClick={()=>setSettings(s=>({...s, mode:'dark'}))} className={`p-6 rounded-[2rem] flex flex-col items-center gap-3 border-2 transition-all ${settings.mode==='dark'?'border-[var(--color-primary)] text-[var(--color-primary)] bg-primary/5 shadow-md':'border-transparent bg-black/5 dark:bg-white/5 opacity-60'}`}>
-                        <Icon name="moon" size={32}/> <span className="text-sm font-bold">Gelap</span>
-                      </button>
+                  <div className="solid-panel p-6 rounded-[2.5rem] space-y-4">
+                    <div className="flex items-center gap-3 mb-2">
+                      <Icon name="sun" size={20} className="opacity-50" />
+                      <h3 className="text-xs font-black opacity-60 tracking-widest uppercase">Tema Visual</h3>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button onClick={()=>setSettings(s=>({...s, mode:'light'}))} className={`py-4 px-2 rounded-[1.5rem] flex items-center justify-center gap-2 border transition-all ${settings.mode==='light'?'border-[var(--color-primary)] text-[var(--color-primary)] bg-primary/10':'border-transparent bg-black/5 dark:bg-white/5 opacity-70 hover:opacity-100'}`}><Icon name="sun" size={20}/> <span className="font-bold text-sm">Terang</span></button>
+                      <button onClick={()=>setSettings(s=>({...s, mode:'dark'}))} className={`py-4 px-2 rounded-[1.5rem] flex items-center justify-center gap-2 border transition-all ${settings.mode==='dark'?'border-[var(--color-primary)] text-[var(--color-primary)] bg-primary/10':'border-transparent bg-black/5 dark:bg-white/5 opacity-70 hover:opacity-100'}`}><Icon name="moon" size={20}/> <span className="font-bold text-sm">Gelap</span></button>
                     </div>
                   </div>
 
-                  <div className="p-8 rounded-[3rem] glass-panel space-y-5 border border-black/5 dark:border-white/5">
-                    <h3 className="text-xs font-black opacity-40 tracking-widest uppercase">Spektrum Liquid Kaca</h3>
-                    <div className="flex justify-between px-2">
+                  <div className="solid-panel p-6 rounded-[2.5rem] space-y-4">
+                    <div className="flex items-center gap-3 mb-2">
+                       <Icon name="palette" size={20} className="opacity-50" />
+                       <h3 className="text-xs font-black opacity-60 tracking-widest uppercase">Aksen Warna</h3>
+                    </div>
+                    <div className="flex flex-wrap gap-3 justify-between px-1">
                       {Object.keys(THEMES).map(k => (
-                        <button key={k} onClick={() => setSettings(s=>({...s, theme: k}))} className="w-14 h-14 rounded-full border-2 transition-transform active:scale-90 flex items-center justify-center shadow-lg" style={{ backgroundColor: THEMES[k], borderColor: settings.theme === k ? 'var(--color-text)' : 'transparent' }}>
+                        <button key={k} onClick={() => setSettings(s=>({...s, theme: k}))} className={`w-12 h-12 rounded-full flex items-center justify-center transition-transform active:scale-90 ${settings.theme === k ? 'ring-4 ring-offset-2 ring-offset-[var(--color-bg)]' : ''}`} style={{ backgroundColor: THEMES[k], ringColor: THEMES[k] }}>
                           {settings.theme === k && <Icon name="checkCircle" size={24} color="#fff" />}
                         </button>
                       ))}
                     </div>
                   </div>
 
-                  <div className="p-8 rounded-[3rem] glass-panel space-y-5 border border-black/5 dark:border-white/5">
-                    <h3 className="text-xs font-black opacity-40 tracking-widest uppercase">Sistem Notifikasi Push</h3>
-                    <div className="flex justify-between items-center px-1">
-                      <span className="font-bold text-base">Persisten Loop Alarm</span>
-                      <button onClick={() => {
-                        setSettings(s => ({...s, soundEnabled: !s.soundEnabled}));
-                        if(!settings.soundEnabled) requestNativeNotification();
-                      }} className={`w-16 h-9 rounded-full p-1.5 transition-colors ${settings.soundEnabled ? 'bg-primary shadow-[0_0_20px_var(--color-primary)]' : 'bg-gray-400 dark:bg-white/20'}`} style={{ backgroundColor: settings.soundEnabled ? 'var(--color-primary)' : '' }}>
-                        <motion.div layout className="w-6 h-6 bg-white rounded-full shadow-sm" style={{ marginLeft: settings.soundEnabled ? '28px' : '0px' }} />
-                      </button>
+                  <div className="solid-panel p-6 rounded-[2.5rem] space-y-4">
+                    <div className="flex items-center gap-3 mb-2">
+                       <Icon name="bell" size={20} className="opacity-50" />
+                       <h3 className="text-xs font-black opacity-60 tracking-widest uppercase">Notifikasi & Audio</h3>
                     </div>
+                    <button onClick={()=>setSettings(s=>({...s, soundEnabled: !s.soundEnabled}))} className={`w-full py-4 px-6 rounded-[1.5rem] flex justify-between items-center border transition-all ${settings.soundEnabled ? 'border-[var(--color-primary)] bg-primary/10 text-[var(--color-primary)]' : 'border-transparent bg-black/5 dark:bg-white/5 opacity-70 hover:opacity-100'}`}>
+                      <span className="font-bold text-sm">Efek Suara Alarm</span>
+                      <div className={`w-12 h-6 rounded-full relative transition-colors ${settings.soundEnabled ? 'bg-[var(--color-primary)]' : 'bg-gray-400 dark:bg-gray-600'}`}>
+                        <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${settings.soundEnabled ? 'translate-x-6' : ''}`} />
+                      </div>
+                    </button>
                   </div>
                 </motion.div>
-              )}
-
-              {view === 'tasks' && (
-                <motion.div key="route-tasks" variants={pageVariants} initial="initial" animate="in" exit="out" transition={transitionConfig} className="space-y-2">
-                  {activeFilteredTasks.length === 0 && (
-                    <div className="text-center mt-32 opacity-40 flex flex-col items-center">
-                      <Icon name="checkCircle" size={72} className="mb-6" />
-                      <p className="text-lg font-bold tracking-wide">Layar bersih. Tidak ada tugas.</p>
-                    </div>
-                  )}
-                  <AnimatePresence>
-                    {activeFilteredTasks.map(task => (
-                      <ItemCard 
-                        key={task.id} item={task} isShopping={false} view={view}
-                        onToggle={() => setTasks(p => p.map(t => t.id === task.id ? {...t, completed: !t.completed} : t))}
-                        onEdit={() => setModalState({ isOpen: true, mode: 'edit', data: task, isShop: false })}
-                        onDelete={() => setConfirmDialog({ id: task.id, action: 'delete_task', msg: 'Hapus tugas ini secara permanen dari sistem?' })}
-                        onPin={() => setTasks(p => p.map(t => t.id === task.id ? {...t, isPinned: !t.isPinned} : t))}
-                      />
-                    ))}
-                  </AnimatePresence>
-                </motion.div>
-              )}
-
-              {view === 'shopping' && (
-                <motion.div key="route-shopping" variants={pageVariants} initial="initial" animate="in" exit="out" transition={transitionConfig} className="space-y-2">
-                  {activeFilteredShop.length === 0 && (
-                    <div className="text-center mt-32 opacity-40 flex flex-col items-center">
-                      <Icon name="shopping" size={72} className="mb-6" />
-                      <p className="text-lg font-bold tracking-wide">Daftar belanja kosong.</p>
-                    </div>
-                  )}
-                  <AnimatePresence>
-                    {activeFilteredShop.map(item => (
-                      <ItemCard 
-                        key={item.id} item={item} isShopping={true} view={view}
-                        onToggle={() => setShopItems(p => p.map(t => t.id === item.id ? {...t, completed: !t.completed} : t))}
-                        onEdit={() => setModalState({ isOpen: true, mode: 'edit', data: item, isShop: true })}
-                        onDelete={() => setConfirmDialog({ id: item.id, action: 'delete_shop', msg: 'Hapus barang ini dari daftar belanja?' })}
-                        onPin={() => {}} 
-                      />
-                    ))}
-                  </AnimatePresence>
-                </motion.div>
-              )}
-
-              {view === 'urgent' && (
-                <motion.div key={`route-urgent-${urgentType}`} variants={pageVariants} initial="initial" animate="in" exit="out" transition={transitionConfig} className="space-y-2">
-                  {(urgentType === 'Tugas' ? activeFilteredTasks : activeFilteredShop).length === 0 && (
-                    <div className="text-center mt-32 opacity-40 flex flex-col items-center">
-                      <Icon name="flame" size={72} className="mb-6" />
-                      <p className="text-lg font-bold tracking-wide">Layar bersih. Tidak ada tenggat waktu mendesak.</p>
-                    </div>
-                  )}
-                  <AnimatePresence>
-                    {(urgentType === 'Tugas' ? activeFilteredTasks : activeFilteredShop).map(item => (
-                      <ItemCard 
-                        key={item.id} item={item} isShopping={urgentType === 'Belanja'} view={view}
-                        onToggle={() => {
-                          if(urgentType === 'Tugas') setTasks(p => p.map(t => t.id === item.id ? {...t, completed: !t.completed} : t));
-                          else setShopItems(p => p.map(t => t.id === item.id ? {...t, completed: !t.completed} : t));
-                        }}
-                        onEdit={() => setModalState({ isOpen: true, mode: 'edit', data: item, isShop: urgentType === 'Belanja' })}
-                        onDelete={() => setConfirmDialog({ id: item.id, action: urgentType === 'Tugas' ? 'delete_task' : 'delete_shop', msg: 'Hapus entri ini secara permanen?' })}
-                        onPin={() => {
-                          if(urgentType === 'Tugas') setTasks(p => p.map(t => t.id === item.id ? {...t, isPinned: !t.isPinned} : t));
-                        }}
-                      />
-                    ))}
-                  </AnimatePresence>
+              ) : (
+                <motion.div key={`route-data-${view}-${urgentType}`} variants={pageVariants} initial="initial" animate="in" exit="out" transition={transitionConfig}>
+                  {(view === 'tasks' || (view === 'urgent' && urgentType === 'Tugas')) ? activeFilteredTasks.map(task => (
+                    <ItemCard 
+                      key={task.id} item={task} isShopping={false} view={view}
+                      onToggle={() => setConfirmDialog({ id: task.id, action: task.completed ? 'uncomplete_task' : 'complete_task', msg: 'Ubah status penyelesaian tugas?' })}
+                      onEdit={() => setModalState({ isOpen: true, mode: 'edit', data: task, isShop: false })}
+                      onDelete={() => setConfirmDialog({ id: task.id, action: 'delete_task', msg: 'Hapus tugas ini secara permanen?' })}
+                      onPin={() => setTasks(p => p.map(t => t.id === task.id ? {...t, isPinned: !t.isPinned} : t))}
+                    />
+                  )) : activeFilteredShop.map(item => (
+                    <ItemCard 
+                      key={item.id} item={item} isShopping={true} view={view}
+                      onToggle={() => setShopItems(p => p.map(t => t.id === item.id ? {...t, completed: !t.completed} : t))}
+                      onEdit={() => setModalState({ isOpen: true, mode: 'edit', data: item, isShop: true })}
+                      onDelete={() => setConfirmDialog({ id: item.id, action: 'delete_shop', msg: 'Hapus barang belanjaan ini?' })}
+                    />
+                  ))}
                 </motion.div>
               )}
             </AnimatePresence>
           </main>
 
           <AnimatePresence>
-            {/* Eksposur tombol Mic direntangkan ke view shopping */}
-            {(view === 'tasks' || view === 'urgent' || view === 'shopping') && (
+            {view !== 'settings' && (
               <motion.div initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 100, opacity: 0 }} className="absolute bottom-8 right-6 flex flex-col gap-4 z-40">
-                <button onClick={handleVoiceInput} className="p-5 rounded-full shadow-lg transition-transform glass-panel relative border border-white/10" style={{ color: 'var(--color-primary)' }}>
-                  {isListening && <span className="absolute inset-0 rounded-full animate-radar bg-primary/50" style={{ backgroundColor: 'var(--color-primary)' }}></span>}
-                  <Icon name="mic" size={28} />
+                <button onClick={handleVoiceInput} className={`p-5 rounded-full shadow-lg glass-panel relative border border-white/10 ${isListening ? 'text-red-500' : 'text-[var(--color-primary)]'}`}>
+                  {isListening && <span className="absolute inset-0 rounded-full animate-radar bg-red-500/30"></span>}
+                  <Icon name="mic" size={24} />
                 </button>
-                <button onClick={() => setModalState({ isOpen: true, mode: 'create', data: null, isShop: view === 'shopping' || (view === 'urgent' && urgentType === 'Belanja') })} className="p-6 rounded-full shadow-[0_15px_40px_rgba(0,0,0,0.5)] active:scale-90 transition-transform text-white border border-white/20" style={{ backgroundColor: 'var(--color-primary)' }}>
-                  <Icon name="plus" size={36} />
-                </button>
+                {view === 'tasks' && (
+                  <button onClick={() => setModalState({ isOpen: true, mode: 'create', data: null, isShop: false })} className="p-6 rounded-full shadow-2xl text-white border border-white/20" style={{ backgroundColor: 'var(--color-primary)' }}><Icon name="plus" size={36} /></button>
+                )}
               </motion.div>
             )}
           </AnimatePresence>
@@ -795,84 +672,62 @@
           <AnimatePresence>
             {confirmDialog && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-lg px-6">
-                <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className={`w-full max-w-sm p-8 rounded-[3rem] glass-panel shadow-2xl flex flex-col items-center text-center border ${confirmDialog.action.includes('delete') || confirmDialog.action === 'sweep' ? 'border-red-500/30' : 'border-white/10'}`}>
-                  <div className={`w-24 h-24 rounded-full flex items-center justify-center mb-6 shadow-inner ${confirmDialog.action.includes('delete') || confirmDialog.action === 'sweep' ? 'bg-red-500/20 text-red-500' : 'bg-primary/20 text-[var(--color-primary)]'}`}>
-                    <Icon name={confirmDialog.action.includes('delete') || confirmDialog.action === 'sweep' ? 'trash' : 'checkCircle'} size={48} />
-                  </div>
-                  <h3 className="text-2xl font-black mb-3">Verifikasi Tindakan</h3>
+                <div className="w-full max-w-sm p-8 rounded-[3rem] glass-panel shadow-2xl flex flex-col items-center text-center border border-white/10">
+                  <div className={`w-24 h-24 rounded-full flex items-center justify-center mb-6 shadow-inner ${confirmDialog.action.includes('delete') || confirmDialog.action === 'sweep' ? 'bg-red-500/20 text-red-500' : 'bg-primary/20'}`} style={!confirmDialog.action.includes('delete') && confirmDialog.action !== 'sweep' ? { color: 'var(--color-primary)' } : {}}><Icon name={confirmDialog.action.includes('delete') || confirmDialog.action === 'sweep' ? 'trash' : 'checkCircle'} size={48} /></div>
+                  <h3 className="text-2xl font-black mb-3">Verifikasi</h3>
                   <p className="text-base opacity-70 mb-8 px-2 leading-relaxed">{confirmDialog.msg}</p>
                   <div className="flex gap-4 w-full">
-                    <button onClick={() => setConfirmDialog(null)} className="flex-1 py-5 rounded-[2rem] bg-black/20 dark:bg-white/10 font-bold text-base hover:bg-black/30 dark:hover:bg-white/20 transition-colors">Batal</button>
+                    <button onClick={() => setConfirmDialog(null)} className="flex-1 py-5 rounded-[2rem] bg-black/20 dark:bg-white/10 font-bold text-base">Batal</button>
                     <button onClick={() => {
-                      if (confirmDialog.action === 'delete_task') {
-                        setTasks(p => p.filter(t => t.id !== confirmDialog.id));
-                      } else if (confirmDialog.action === 'delete_shop') {
-                        setShopItems(p => p.filter(i => i.id !== confirmDialog.id));
-                      } else if (confirmDialog.action === 'sweep') {
-                        if (view === 'tasks') setTasks(p => p.filter(t => !t.completed));
-                        if (view === 'shopping') setShopItems(p => p.filter(t => !t.completed));
-                      } 
+                      if (confirmDialog.action === 'delete_task') setTasks(p => p.filter(t => t.id !== confirmDialog.id));
+                      else if (confirmDialog.action === 'delete_shop') setShopItems(p => p.filter(i => i.id !== confirmDialog.id));
+                      else if (confirmDialog.action === 'sweep') { if (view === 'tasks') setTasks(p => p.filter(t => !t.completed)); if (view === 'shopping') setShopItems(p => p.filter(t => !t.completed)); } 
+                      else { const isC = confirmDialog.action === 'complete_task'; setTasks(p => p.map(t => t.id === confirmDialog.id ? {...t, completed: isC} : t)); }
                       setConfirmDialog(null);
-                    }} className={`flex-1 py-5 rounded-[2rem] font-bold text-white shadow-xl active:scale-95 transition-transform ${confirmDialog.action.includes('delete') || confirmDialog.action === 'sweep' ? 'bg-red-600' : ''}`} style={(confirmDialog.action !== 'delete_task' && confirmDialog.action !== 'delete_shop' && confirmDialog.action !== 'sweep') ? { backgroundColor: 'var(--color-primary)' } : {}}>
-                      Eksekusi
-                    </button>
+                    }} className={`flex-1 py-5 rounded-[2rem] font-bold text-white ${confirmDialog.action.includes('delete') || confirmDialog.action === 'sweep' ? 'bg-red-600' : ''}`} style={!confirmDialog.action.includes('delete') && confirmDialog.action !== 'sweep' ? { backgroundColor: 'var(--color-primary)' } : {}}>Eksekusi</button>
                   </div>
-                </motion.div>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
 
           <AnimatePresence>
             {modalState.isOpen && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[60] flex items-end bg-black/80 backdrop-blur-lg sm:items-center sm:justify-center">
-                <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', damping: 25, stiffness: 300 }} className="w-full max-w-md p-8 sm:p-10 glass-panel rounded-t-[3rem] sm:rounded-[3rem] border-b-0 sm:border flex flex-col gap-6 max-h-[95vh] overflow-y-auto shadow-[0_-20px_60px_rgba(0,0,0,0.5)]">
-                  <div className="w-20 h-2 bg-black/20 dark:bg-white/20 rounded-full mx-auto sm:hidden mb-2" />
-                  <h2 className="text-3xl font-black mt-2 tracking-tight uppercase opacity-90">{modalState.mode === 'create' ? 'Modul Baru' : 'Revisi Entri'}</h2>
-                  
-                  <input id="modalTitle" type="text" defaultValue={modalState.data?.title || ''} placeholder="Judul / Nama barang..." className="w-full p-5 rounded-[2rem] text-xl font-bold border-none" />
-                  
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[60] flex items-end bg-black/70 backdrop-blur-md sm:items-center sm:justify-center">
+                <div className="w-full max-w-md p-8 sm:p-10 glass-panel rounded-t-[3rem] sm:rounded-[3rem] flex flex-col gap-6 max-h-[95vh] overflow-y-auto">
+                  <h2 className="text-3xl font-black tracking-tight uppercase opacity-90">{modalState.mode === 'create' ? 'Data Baru' : 'Revisi'}</h2>
+                  <input id="modalTitle" type="text" defaultValue={modalState.data?.title || ''} placeholder="Nama entri..." className="w-full p-5 rounded-[2rem] text-xl font-bold border-none" />
                   <div className="grid grid-cols-2 gap-4">
                     {!modalState.isShop && (
                       <div className="space-y-3">
                         <label className="text-xs font-black opacity-50 block uppercase tracking-widest pl-2">Klasifikasi</label>
-                        <select id="modalCat" defaultValue={modalState.data?.category || 'Lainnya'} className="w-full p-5 rounded-[2rem] border-none text-base font-bold text-center">
+                        <select id="modalCat" defaultValue={modalState.data?.category || 'Lainnya'} className="w-full p-5 rounded-[2rem] border-none text-base font-bold text-center bg-black/5 dark:bg-white/5">
                           {Object.keys(CATEGORIES).map(c => <option key={c} value={c}>{c}</option>)}
                         </select>
                       </div>
                     )}
                     <div className={`space-y-3 ${modalState.isShop ? 'col-span-2' : ''}`}>
-                      <label className="text-xs font-black opacity-50 block uppercase tracking-widest pl-2">Titik Tenggat (Opsional)</label>
-                      <input id="modalDate" type="datetime-local" defaultValue={modalState.data?.dueDate ? new Date(modalState.data.dueDate).toISOString().slice(0,16) : ''} className="w-full p-5 rounded-[2rem] border-none text-base font-bold" />
+                      <label className="text-xs font-black opacity-50 block uppercase tracking-widest pl-2">Tenggat Kalender</label>
+                      <input id="modalDate" type="datetime-local" defaultValue={modalState.data?.dueDate ? new Date(modalState.data.dueDate).toISOString().slice(0,16) : ''} className="w-full p-5 rounded-[2rem] text-sm font-bold text-center" />
                     </div>
                   </div>
-
                   {!modalState.isShop && <textarea id="modalNotes" defaultValue={modalState.data?.notes || ''} placeholder="Catatan/Deskripsi..." className="w-full p-6 rounded-[2rem] border-none min-h-[160px] resize-none text-base font-medium leading-relaxed"></textarea>}
-                  
                   <div className="flex gap-4 pt-6 mt-auto">
-                    <button onClick={() => setModalState({isOpen:false})} className="flex-1 py-5 rounded-[2rem] bg-black/5 dark:bg-white/10 font-bold text-base border border-black/5 dark:border-white/5 active:scale-95 transition-transform">Abaikan</button>
+                    <button onClick={() => setModalState({isOpen:false})} className="flex-1 py-5 rounded-[2rem] bg-black/5 dark:bg-white/10 font-bold text-base">Batal</button>
                     <button onClick={() => {
-                      const title = document.getElementById('modalTitle').value;
-                      if (!title.trim()) return;
+                      const title = document.getElementById('modalTitle').value; if (!title.trim()) return;
                       const dateVal = document.getElementById('modalDate').value;
-                      const payload = { 
-                        title, 
-                        notes: modalState.isShop ? '' : document.getElementById('modalNotes').value, 
-                        dueDate: dateVal ? new Date(dateVal).toISOString() : null,
-                        category: modalState.isShop ? 'Belanja' : document.getElementById('modalCat').value
-                      };
-                      
+                      const payload = { title, notes: modalState.isShop ? '' : document.getElementById('modalNotes').value, dueDate: dateVal ? new Date(dateVal).toISOString() : null, category: modalState.isShop ? 'Belanja' : document.getElementById('modalCat').value };
                       if (modalState.mode === 'create') {
-                        const newItem = { id: Date.now().toString(), createdAt: new Date().toISOString(), completed: false, notifiedExact: false, isPinned: false, ...payload };
-                        if (modalState.isShop) setShopItems(p => [newItem, ...p]);
-                        else setTasks(p => [newItem, ...p]);
+                        setTasks(p => [{ id: Date.now().toString(), createdAt: new Date().toISOString(), completed: false, notifiedExact: false, isPinned: false, ...payload }, ...p]);
                       } else {
-                        if (modalState.isShop) setShopItems(p => p.map(t => t.id === modalState.data.id ? { ...t, notifiedExact: false, ...payload } : t));
-                        else setTasks(p => p.map(t => t.id === modalState.data.id ? { ...t, notifiedExact: false, ...payload } : t));
+                        if (modalState.isShop) setShopItems(p => p.map(t => t.id === modalState.data.id ? { ...t, ...payload } : t));
+                        else setTasks(p => p.map(t => t.id === modalState.data.id ? { ...t, ...payload } : t));
                       }
-                      setModalState({isOpen:false});
-                    }} className="flex-1 py-5 rounded-[2rem] font-bold text-white shadow-xl text-base active:scale-95 transition-transform border border-white/20" style={{ backgroundColor: 'var(--color-primary)' }}>Simpan Data</button>
+                      setModalState({isOpen:false}); setSearchQuery('');
+                    }} className="flex-1 py-5 rounded-[2rem] font-bold text-white shadow-xl text-base border" style={{ backgroundColor: 'var(--color-primary)' }}>Simpan</button>
                   </div>
-                </motion.div>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
