@@ -1,41 +1,68 @@
-const CACHE_NAME = 'tms-cache-v6'; // Naikkan versi string ini setiap kali Anda memperbarui kode
-const urlsToCache = [
+const CACHE_NAME = 'tugas-v6-cache-1.0.0';
+const STATIC_ASSETS = [
+  './',
   './index.html',
   './manifest.json',
   './icon-192.png',
   './icon-512.png'
 ];
 
-self.addEventListener('install', event => {
-  self.skipWaiting(); // Paksa SW baru untuk segera mengambil alih
+const CDN_ORIGINS = [
+  'cdn.tailwindcss.com',
+  'cdn.jsdelivr.net'
+];
+
+self.addEventListener('install', (event) => {
+  self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
   );
 });
 
-self.addEventListener('activate', event => {
-  const cacheWhitelist = [CACHE_NAME];
+self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(cacheName => {
-          // Eksekusi penghapusan cache lama untuk menghindari bug visual/logika
-          if (!cacheWhitelist.includes(cacheName)) {
-            return caches.delete(cacheName);
+    caches.keys().then((keys) => Promise.all(
+      keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
+    )).then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener('fetch', (event) => {
+  const { request } = event;
+  const url = new URL(request.url);
+
+  // Strategi: Stale-While-Revalidate untuk Pustaka CDN
+  if (CDN_ORIGINS.some(origin => url.hostname.includes(origin))) {
+    event.respondWith(
+      caches.match(request).then((cachedResponse) => {
+        const fetchPromise = fetch(request).then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, networkResponse.clone()));
           }
-        })
-      );
-    }).then(() => self.clients.claim())
-  );
-});
+          return networkResponse;
+        }).catch((error) => {
+          console.error(JSON.stringify({ what: "CDN Fetch Failed", where: "sw.js fetch handler", why: error.message }));
+          return cachedResponse;
+        });
+        return cachedResponse || fetchPromise;
+      })
+    );
+    return;
+  }
 
-self.addEventListener('fetch', event => {
+  // Strategi: Network First, Fallback Cache untuk Aset Lokal
   event.respondWith(
-    caches.match(event.request).then(response => {
-      return response || fetch(event.request);
-    }).catch(() => {
-      // Fallback luring absolut jika gagal fetch jaringan
-      return caches.match('./index.html');
-    })
+    fetch(request)
+      .then((response) => {
+        if (response && response.status === 200) {
+          const resClone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, resClone));
+        }
+        return response;
+      })
+      .catch((error) => {
+        console.error(JSON.stringify({ what: "Local Fetch Failed", where: "sw.js fetch handler", why: error.message }));
+        return caches.match(request);
+      })
   );
 });
