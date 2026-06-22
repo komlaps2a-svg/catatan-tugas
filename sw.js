@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tms-cache-v5'; // Naikkan versi string ini setiap kali Anda memperbarui kode
+const CACHE_NAME = 'tms-cache-v6'; // Naikkan versi string ini setiap kali Anda memperbarui kode
 const urlsToCache = [
   './index.html',
   './manifest.json',
