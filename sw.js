@@ -1,15 +1,11 @@
-const CACHE_NAME = 'tugas-v6-cache-1.0.0';
+// WAJIB DIGANTI SETIAP ADA UPDATE (contoh: 1.0.3 -> 1.0.4)
+const CACHE_VERSION = '1.0.3';
+const CACHE_NAME = `tugas-v6-cache-${CACHE_VERSION}`;
+
 const STATIC_ASSETS = [
   './',
   './index.html',
-  './manifest.json',
-  './icon-192.png',
-  './icon-512.png'
-];
-
-const CDN_ORIGINS = [
-  'cdn.tailwindcss.com',
-  'cdn.jsdelivr.net'
+  './manifest.json'
 ];
 
 self.addEventListener('install', (event) => {
@@ -22,7 +18,8 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => Promise.all(
-      keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
+      keys.filter((key) => key.startsWith('tugas-v6-cache-') && key !== CACHE_NAME)
+          .map((key) => caches.delete(key))
     )).then(() => self.clients.claim())
   );
 });
@@ -31,38 +28,34 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Strategi: Stale-While-Revalidate untuk Pustaka CDN
-  if (CDN_ORIGINS.some(origin => url.hostname.includes(origin))) {
+  // PROTEKSI FATAL: Jangan pernah intersep request untuk sw.js itu sendiri
+  if (url.pathname.endsWith('sw.js')) {
+      return; 
+  }
+
+  // 1. Dokumen HTML & Permintaan Navigasi -> Network First, Fallback Ekstrim ke Index
+  if (request.mode === 'navigate') {
     event.respondWith(
-      caches.match(request).then((cachedResponse) => {
-        const fetchPromise = fetch(request).then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, networkResponse.clone()));
-          }
+      fetch(request).then((networkResponse) => {
+        return caches.open(CACHE_NAME).then((cache) => {
+          cache.put(request, networkResponse.clone());
           return networkResponse;
-        }).catch((error) => {
-          console.error(JSON.stringify({ what: "CDN Fetch Failed", where: "sw.js fetch handler", why: error.message }));
-          return cachedResponse;
         });
-        return cachedResponse || fetchPromise;
-      })
+      }).catch(() => caches.match('./index.html').then(res => res || caches.match('./')))
     );
     return;
   }
 
-  // Strategi: Network First, Fallback Cache untuk Aset Lokal
+  // 2. Aset CDN -> Stale-While-Revalidate
   event.respondWith(
-    fetch(request)
-      .then((response) => {
-        if (response && response.status === 200) {
-          const resClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, resClone));
+    caches.match(request).then((cachedResponse) => {
+      const fetchPromise = fetch(request).then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200) {
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, networkResponse.clone()));
         }
-        return response;
-      })
-      .catch((error) => {
-        console.error(JSON.stringify({ what: "Local Fetch Failed", where: "sw.js fetch handler", why: error.message }));
-        return caches.match(request);
-      })
+        return networkResponse;
+      }).catch(() => { /* Abaikan koneksi mati */ });
+      return cachedResponse || fetchPromise;
+    })
   );
 });
