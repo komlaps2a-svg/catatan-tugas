@@ -737,5 +737,35 @@
     const root = ReactDOM.createRoot(document.getElementById('root'));
     root.render(<ErrorBoundary><App /></ErrorBoundary>);
   </script>
+  
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        let refreshing = false;
+
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (!refreshing) {
+            refreshing = true;
+            window.location.reload();
+          }
+        });
+
+        navigator.serviceWorker.register('./sw.js').then((reg) => {
+          reg.update();
+
+          reg.addEventListener('updatefound', () => {
+            const newWorker = reg.installing;
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                // Background update terdeteksi, reload diserahkan ke 'controllerchange'
+              }
+            });
+          });
+        }).catch((err) => {
+          console.error(JSON.stringify({ what: "SW Fatal", why: err.message }));
+        });
+      });
+    }
+  </script>
 </body>
 </html>
