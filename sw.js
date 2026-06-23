@@ -1,5 +1,5 @@
 // WAJIB DIGANTI SETIAP ADA UPDATE HTML/LOGIKA (contoh: 1.0.3 -> 1.0.4)
-const CACHE_VERSION = '1.0.6';
+const CACHE_VERSION = '1.0.7';
 const CACHE_NAME = `tugas-v6-cache-${CACHE_VERSION}`;
 
 const STATIC_ASSETS = [
