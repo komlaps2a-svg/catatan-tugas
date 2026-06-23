@@ -168,8 +168,24 @@
       if (Notification.permission !== "granted" && Notification.permission !== "denied") Notification.requestPermission();
     };
 
+    // DELEGASI RESOLUSI API PWA: Mencegah 'Illegal constructor'
     const triggerNativeNotification = (title, body) => {
-      if ("Notification" in window && Notification.permission === "granted") new Notification(title, { body: body, icon: './icon-192.png' });
+      if (!("Notification" in window) || Notification.permission !== "granted") return;
+      
+      const options = { body: body, icon: './icon-192.png', badge: './icon-192.png', vibrate: [200, 100, 200] };
+
+      // Prioritas 1: Eksekusi API Service Worker (Metode Sah pada WebAPK Android)
+      if (navigator.serviceWorker) {
+        navigator.serviceWorker.ready.then((registration) => {
+          registration.showNotification(title, options);
+        }).catch((err) => {
+          // Prioritas 2: Fallback primitif jika register tertahan
+          try { new Notification(title, options); } catch(e) {}
+        });
+      } else {
+        // Lingkungan Non-PWA / Desktop
+        try { new Notification(title, options); } catch(e) {}
+      }
     };
 
     const playModernRingtone = () => {
@@ -216,7 +232,6 @@
       }
     };
 
-    // NLP Regex Direvisi: Menangkap kata pisah yang lebih natural (terus, lalu, kemudian, dsb)
     const parseVoiceCommand = (text, isShoppingMode = false) => {
       if (isShoppingMode) {
         let cleaned = text.replace(/^(?:beli|tambahkan|tolong beli|belanja)\s+/i, '');
@@ -430,7 +445,6 @@
         setTimeout(() => setToasts(p => p.filter(t => t.id !== id)), 5000);
       }, []);
 
-      // ENGINE NOTIFIKASI MULTITAHAP + TOAST
       useEffect(() => {
         if (activeAlarmTask) return; 
         
@@ -530,7 +544,6 @@
         setShopInputTitle(''); setShopInputDate(''); setSearchQuery('');
       };
 
-      // Fiksasi Logika Pengurutan Multi-Tier
       const getActiveItems = (sourceList, tabFilter) => {
         const query = searchQuery.toLowerCase(); let source = sourceList;
         if (view === 'urgent') {
@@ -548,7 +561,6 @@
           
           if (timeA !== timeB) return timeA - timeB;
           
-          // Fallback: Jika tidak ada dueDate (Infinity), urutkan berdasarkan waktu pembuatan terbaru
           const createdA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
           const createdB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
           return createdB - createdA;
