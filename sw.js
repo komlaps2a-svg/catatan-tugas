@@ -1,5 +1,5 @@
-// WAJIB DIGANTI SETIAP ADA UPDATE HTML/LOGIKA (contoh: 1.0.3 -> 1.0.4)
-const CACHE_VERSION = '1.0.7';
+// V6 Iterasi ke-11
+const CACHE_VERSION = '1.1.1';
 const CACHE_NAME = `tugas-v6-cache-${CACHE_VERSION}`;
 
 const STATIC_ASSETS = [
@@ -28,13 +28,10 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // PROTEKSI FATAL: Jangan pernah intersep request untuk sw.js itu sendiri
-  // Ini mencegah layar putih ketika browser bingung me-resolve lokasi cache
   if (url.pathname.endsWith('sw.js')) {
       return; 
   }
 
-  // 1. Dokumen HTML & Permintaan Navigasi -> Network First, Fallback ke Index Lokal
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request).then((networkResponse) => {
@@ -47,7 +44,6 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 2. Aset Eksternal (CDN) & Gambar -> Stale-While-Revalidate
   event.respondWith(
     caches.match(request).then((cachedResponse) => {
       const fetchPromise = fetch(request).then((networkResponse) => {
@@ -55,9 +51,25 @@ self.addEventListener('fetch', (event) => {
           caches.open(CACHE_NAME).then((cache) => cache.put(request, networkResponse.clone()));
         }
         return networkResponse;
-      }).catch(() => { /* Abaikan log koneksi mati di environment produksi */ });
+      }).catch(() => {});
       
       return cachedResponse || fetchPromise;
+    })
+  );
+});
+
+self.addEventListener('notificationclick', function(event) {
+  event.notification.close();
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(clientList) {
+      if (clientList.length > 0) {
+        let client = clientList[0];
+        for (let i = 0; i < clientList.length; i++) {
+          if (clientList[i].focused) { client = clientList[i]; }
+        }
+        return client.focus();
+      }
+      return clients.openWindow('./index.html');
     })
   );
 });
