@@ -96,7 +96,7 @@
         circle: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"></circle></svg>,
         trash: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>,
         plus: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>,
-        settings: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>,
+        settings: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>,
         search: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>,
         flame: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path></svg>,
         moon: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>,
@@ -124,7 +124,10 @@
     const DEFAULT_CATEGORIES = { 'Lainnya': '#64748b', 'Akademik': '#3b82f6', 'Pekerjaan': '#10b981', 'Pribadi': '#f43f5e' };
     const PALETTE_COLORS = ['#3b82f6', '#10b981', '#f43f5e', '#8b5cf6', '#f97316', '#06b6d4', '#ec4899'];
     
-    // UTILS
+    // --- HOISTED CORE LOGIC ---
+    let alarmContext = null; 
+    let isAlarmUnlocked = false;
+
     const formatIDDate = (iso) => {
       if (!iso) return '';
       const d = new Date(iso); const today = new Date(); const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
@@ -138,13 +141,12 @@
     const exportToNativeCalendar = (item) => {
       try {
         if (!item.dueDate) return;
-        const dtstart = new Date(item.dueDate).toISOString().replace(/-|:|\.\d+/g, '');
-        const endDt = new Date(new Date(item.dueDate).getTime() + 3600000);
-        const dtend = endDt.toISOString().replace(/-|:|\.\d+/g, '');
-        const icsContent = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Catatan Tugas V6//ID', 'BEGIN:VEVENT', `DTSTAMP:${new Date().toISOString().replace(/-|:|\.\d+/g, '')}`, `UID:${item.id}@catatan.tugas`, `DTSTART:${dtstart}`, `DTEND:${dtend}`, `SUMMARY:${item.title}`, `DESCRIPTION:${(item.notes || '').replace(/\n/g, '\\n')}`, 'BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:Peringatan Tugas', 'TRIGGER:-PT30M', 'END:VALARM', 'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
-        const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
-        const link = document.createElement('a'); link.href = window.URL.createObjectURL(blob); link.setAttribute('download', `${item.title.replace(/\s+/g, '_')}.ics`);
-        document.body.appendChild(link); link.click(); document.body.removeChild(link);
+        const start = new Date(item.dueDate); const end = new Date(start.getTime() + 3600000);
+        const formatDt = (d) => d.toISOString().replace(/-|:|\.\d+/g, '');
+        const title = encodeURIComponent(item.title);
+        const details = encodeURIComponent((item.notes || '') + '\n\n---\nBuka Catatan Tugas:\n' + window.location.href);
+        const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&details=${details}&dates=${formatDt(start)}/${formatDt(end)}`;
+        window.open(url, '_blank');
       } catch (err) {}
     };
 
@@ -153,9 +155,94 @@
       return text.split('\n').map((line, index, arr) => <span key={index}>{line}{index < arr.length - 1 ? ',' : ''}{index < arr.length - 1 && <br />}</span>);
     };
 
-    // --- UI COMPONENTS ---
+    const requestNativeNotification = () => { if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") Notification.requestPermission(); };
     
-    // Perbaikan CSS Overflow pada ScrollWheel (Lebih Padat)
+    const triggerNativeNotification = async (title, body) => {
+      if (!("Notification" in window) || Notification.permission !== "granted") return;
+      const options = { body: body, icon: './icon-192.png', badge: './icon-192.png', vibrate: [200, 100, 200] };
+      try { const reg = await navigator.serviceWorker.getRegistration(); if (reg) { await reg.showNotification(title, options); } else { new Notification(title, options); } } catch (err) {}
+    };
+
+    const playModernRingtone = () => {
+      try {
+        if (!alarmContext) alarmContext = new (window.AudioContext || window.webkitAudioContext)();
+        if (alarmContext.state === 'suspended') alarmContext.resume();
+        const now = alarmContext.currentTime;
+        const playNote = (freq, startTime, duration) => {
+          const osc = alarmContext.createOscillator(), gain = alarmContext.createGain();
+          osc.type = 'sine'; osc.frequency.setValueAtTime(freq, startTime);
+          gain.gain.setValueAtTime(0, startTime); gain.gain.linearRampToValueAtTime(0.6, startTime + 0.05); gain.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
+          osc.connect(gain); gain.connect(alarmContext.destination); osc.start(startTime); osc.stop(startTime + duration);
+        };
+        playNote(523.25, now, 0.5); playNote(659.25, now + 0.1, 0.5); playNote(783.99, now + 0.2, 0.5); playNote(1046.50, now + 0.3, 1.0); 
+      } catch(e) {}
+    };
+
+    const playWarningChime = () => {
+      try {
+        if (!alarmContext) alarmContext = new (window.AudioContext || window.webkitAudioContext)();
+        if (alarmContext.state === 'suspended') alarmContext.resume();
+        const now = alarmContext.currentTime;
+        const osc = alarmContext.createOscillator(), gain = alarmContext.createGain();
+        osc.type = 'triangle'; osc.frequency.setValueAtTime(800, now); osc.frequency.exponentialRampToValueAtTime(1200, now + 0.1);
+        gain.gain.setValueAtTime(0, now); gain.gain.linearRampToValueAtTime(0.3, now + 0.05); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+        osc.connect(gain); gain.connect(alarmContext.destination); osc.start(now); osc.stop(now + 0.3);
+      } catch(e) {}
+    };
+
+    const unlockAudioSystem = () => {
+      if(!isAlarmUnlocked) { isAlarmUnlocked = true; try { alarmContext = new (window.AudioContext || window.webkitAudioContext)(); if(alarmContext.state === 'suspended') alarmContext.resume(); const osc = alarmContext.createOscillator(), gain = alarmContext.createGain(); gain.gain.value = 0; osc.connect(gain); gain.connect(alarmContext.destination); osc.start(); osc.stop(alarmContext.currentTime + 0.001); } catch (e) {} }
+    };
+
+    const parseVoiceCommand = (text, isShoppingMode = false) => {
+      if (isShoppingMode) {
+        let cleaned = text.replace(/^(?:beli|tambahkan|tolong beli|belanja)\s+/i, '');
+        let items = cleaned.split(/,|\bdan\b|\bsama\b|\bterus\b|\blalu\b|\bkemudian\b/i).map(s => s.trim()).filter(Boolean);
+        return items.map(title => ({ id: (Date.now() + Math.random()).toString(), title: title.charAt(0).toUpperCase() + title.slice(1), dueDate: null, completed: false, notified1h: false, notified30m: false, notified10m: false, notifiedExact: false, createdAt: new Date().toISOString(), category: 'Belanja' }));
+      }
+      let draft = { title: "", notes: "", dueDate: null, category: "Lainnya" }; let lower = text.toLowerCase();
+      const descMatch = lower.match(/(?:dengan deskripsi|deskripsi|catatan)\s+(.*)/);
+      if (descMatch) { draft.notes = text.substring(descMatch.index + descMatch[0].indexOf(descMatch[1])); text = text.substring(0, descMatch.index); lower = text.toLowerCase(); }
+      if(lower.includes("akademik") || lower.includes("kampus") || lower.includes("sekolah")) draft.category = "Akademik"; else if(lower.includes("kerja") || lower.includes("kantor") || lower.includes("rapat")) draft.category = "Pekerjaan"; else if(lower.includes("pribadi") || lower.includes("rumah")) draft.category = "Pribadi";
+      const now = new Date(); let targetDate = new Date(); let timeSet = false;
+      const days = ["minggu", "senin", "selasa", "rabu", "kamis", "jumat", "sabtu"]; const todayIdx = now.getDay();
+      for (let i = 0; i < days.length; i++) { if (lower.includes(`hari ${days[i]}`)) { let dayDiff = i - todayIdx; if (dayDiff <= 0) dayDiff += 7; targetDate.setDate(now.getDate() + dayDiff); timeSet = true; break; } }
+      if (!timeSet) { if (lower.includes("besok")) { targetDate.setDate(now.getDate() + 1); timeSet = true; } else if (lower.includes("lusa")) { targetDate.setDate(now.getDate() + 2); timeSet = true; } }
+      const timeMatch = lower.match(/(?:jam|pukul)\s*(\d{1,2})(?:\s*(pagi|siang|sore|malam))?/);
+      if (timeMatch) { let hour = parseInt(timeMatch[1]); const modifier = timeMatch[2]; if (modifier === 'siang' || modifier === 'sore' || modifier === 'malam') { if (hour < 12) hour += 12; } else if (modifier === 'pagi' && hour === 12) { hour = 0; } targetDate.setHours(hour, 0, 0, 0); timeSet = true; } else if (timeSet) { targetDate.setHours(12, 0, 0, 0); } 
+      if (timeSet) { draft.dueDate = new Date(targetDate.getTime() - (targetDate.getTimezoneOffset() * 60000)).toISOString().slice(0,16); draft.title = text.replace(/besok|lusa|(?:hari\s+(?:senin|selasa|rabu|kamis|jumat|sabtu|minggu))|(?:jam|pukul)\s*\d{1,2}(?:\s*(?:pagi|siang|sore|malam))?/gi, '').trim(); } else { draft.title = text.trim(); }
+      draft.title = draft.title.replace(/akademik|kampus|sekolah|kerja|kantor|rapat|pribadi|rumah/gi, '').trim();
+      if(!draft.title) draft.title = "Tugas Baru"; draft.title = draft.title.charAt(0).toUpperCase() + draft.title.slice(1);
+      return draft;
+    };
+
+    // --- REUSABLE COMPONENTS ---
+    const Portal = ({ children }) => {
+      const [mounted, setMounted] = useState(false);
+      useEffect(() => setMounted(true), []);
+      return mounted ? ReactDOM.createPortal(children, document.body) : null;
+    };
+
+    const useCountdown = (dueDate) => {
+      const [timeLeft, setTimeLeft] = useState('');
+      useEffect(() => {
+        if (!dueDate) return; const target = new Date(dueDate).getTime();
+        const update = () => {
+          const diff = target - Date.now();
+          if (diff <= 0) { setTimeLeft('Telah Berlalu'); return; }
+          const h = Math.floor(diff / (1000 * 60 * 60)); const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)); const s = Math.floor((diff % (1000 * 60)) / 1000);
+          setTimeLeft(`${h}j ${m}m ${s}s`);
+        };
+        update(); const id = setInterval(update, 1000); return () => clearInterval(id);
+      }, [dueDate]);
+      return timeLeft;
+    };
+
+    const CountdownInjector = ({ dueDate }) => {
+      const countdown = useCountdown(dueDate);
+      return <span className="inline-block mt-2 px-3 py-1.5 rounded-[1rem] bg-red-500/15 text-red-500 font-black tracking-widest uppercase border border-red-500/20 w-fit shadow-sm text-[10px]">Sisa: {countdown}</span>;
+    };
+
     const ScrollWheel = ({ items, value, onChange, width = 'w-16' }) => {
       const scrollerRef = useRef(null);
       const [localVal, setLocalVal] = useState(value);
@@ -225,17 +312,18 @@
             </div>
             <Icon name="chevronRight" size={16} className="opacity-50 rotate-90 shrink-0" />
           </button>
-          <AnimatePresence>
-            {isOpen && (
-              <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm overflow-y-auto">
-                <div className="min-h-full flex flex-col justify-end sm:justify-center p-4">
-                  <motion.div initial={{ y: '20%', opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: '20%', opacity: 0 }} transition={{ type: "spring", damping: 25, stiffness: 300 }} className="w-full max-w-sm mx-auto bg-[var(--color-surface)] border border-white/10 rounded-[2.5rem] p-6 shadow-2xl flex flex-col">
+          
+          <Portal>
+            <AnimatePresence>
+              {isOpen && (
+                <div className="fixed z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 pointer-events-auto" style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100dvh' }}>
+                  <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} transition={{ type: "tween", duration: 0.15 }} className="w-full max-w-sm bg-[var(--color-surface)] border border-white/10 rounded-[2.5rem] p-6 shadow-2xl flex flex-col max-h-[85vh] overflow-hidden">
                     <div className="flex justify-between items-center mb-5 shrink-0">
                       <h3 className="font-black text-lg tracking-widest uppercase opacity-80">{isAdding ? 'Kategori Baru' : 'Pilih Kategori'}</h3>
                       <button onClick={() => setIsOpen(false)} className="p-2 bg-black/5 dark:bg-white/10 rounded-full active:scale-90 transition-transform"><Icon name="x" size={20} /></button>
                     </div>
                     {!isAdding ? (
-                      <div className="flex-1 overflow-y-auto space-y-2 scrollbar-hide max-h-[50vh]">
+                      <div className="flex-1 overflow-y-auto space-y-2 scrollbar-hide">
                         {Object.keys(categories).map(cat => (
                           <button key={cat} onClick={() => { onChange(cat); setIsOpen(false); }} className={`w-full p-4 rounded-[1.5rem] text-left font-bold flex items-center gap-4 transition-colors ${selected === cat ? 'bg-black/10 dark:bg-white/10 ring-1 ring-white/20' : 'bg-transparent hover:bg-black/5 dark:hover:bg-white/5'}`}>
                             <span className="w-5 h-5 rounded-full shadow-sm" style={{ backgroundColor: categories[cat] }}></span>
@@ -258,7 +346,7 @@
                             ))}
                           </div>
                         </div>
-                        <div className="flex gap-3 mt-2">
+                        <div className="flex gap-3 mt-2 shrink-0">
                           <button onClick={() => setIsAdding(false)} className="flex-1 py-4 rounded-[1.5rem] bg-black/5 dark:bg-white/10 font-bold text-sm active:scale-95 transition-transform">Batal</button>
                           <button onClick={handleAdd} className="flex-1 py-4 rounded-[1.5rem] font-bold text-white shadow-xl text-sm active:scale-95 transition-transform" style={{ backgroundColor: 'var(--color-primary)' }}>Simpan</button>
                         </div>
@@ -266,9 +354,9 @@
                     )}
                   </motion.div>
                 </div>
-              </div>
-            )}
-          </AnimatePresence>
+              )}
+            </AnimatePresence>
+          </Portal>
         </div>
       );
     };
@@ -315,19 +403,19 @@
               <span className="truncate">{value ? formatIDDate(value) : 'Tanpa Tenggat Waktu'}</span>
             </button>
           ) : (
-            <button onClick={() => setIsOpen(true)} className={`p-2.5 rounded-full flex items-center justify-center transition-colors shadow-inner active:scale-90 ${value ? 'bg-primary/20 text-[var(--color-primary)]' : 'bg-black/5 dark:bg-white/5 opacity-70 hover:opacity-100'}`}>
+            <button onClick={() => setIsOpen(true)} className={`p-3 rounded-full flex items-center justify-center transition-colors shadow-inner active:scale-90 ${value ? 'bg-primary/20 text-[var(--color-primary)]' : 'bg-black/5 dark:bg-white/5 opacity-70 hover:opacity-100'}`}>
                <Icon name="calendar" size={20} />
             </button>
           )}
 
-          <AnimatePresence>
-            {isOpen && (
-              <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm overflow-y-auto">
-                <div className="min-h-full flex flex-col justify-end sm:justify-center p-4">
-                  <motion.div initial={{ y: '20%', opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: '20%', opacity: 0 }} transition={{ type: "spring", damping: 25, stiffness: 300 }} className="w-full max-w-sm mx-auto bg-[var(--color-surface)] border border-white/10 rounded-[2.5rem] p-6 shadow-2xl flex flex-col gap-5">
+          <Portal>
+            <AnimatePresence>
+              {isOpen && (
+                <div className="fixed z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 pointer-events-auto" style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100dvh' }}>
+                  <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} transition={{ type: "tween", duration: 0.15 }} className="w-full max-w-sm bg-[var(--color-surface)] border border-white/10 rounded-[2.5rem] p-6 shadow-2xl flex flex-col gap-4 max-h-[85vh] overflow-hidden">
                     {viewMode === 'calendar' ? (
                       <>
-                        <div className="flex justify-between items-center px-1 shrink-0">
+                        <div className="flex justify-between items-center px-1 shrink-0 mb-2">
                           <button onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1))} className="p-2 bg-black/5 dark:bg-white/5 rounded-full hover:bg-black/10 transition-colors active:scale-90"><Icon name="chevronLeft" size={20}/></button>
                           <button onClick={() => setViewMode('monthYear')} className="py-2 px-4 rounded-[1rem] bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors font-black tracking-widest uppercase text-[var(--color-primary)] text-xs active:scale-95">
                             {monthsList[viewDate.getMonth()]} {viewDate.getFullYear()}
@@ -367,101 +455,18 @@
                       </>
                     )}
                     {viewMode === 'calendar' && (
-                      <div className="flex gap-3 mt-1 shrink-0">
+                      <div className="flex gap-3 mt-2 shrink-0">
                         <button onClick={handleClear} className="flex-1 py-4 rounded-[1.5rem] bg-red-500/10 text-red-500 font-bold text-sm border border-red-500/20 active:scale-95 transition-transform">Hapus</button>
                         <button onClick={handleConfirm} className="flex-1 py-4 rounded-[1.5rem] font-bold text-white shadow-xl text-sm active:scale-95 transition-transform" style={{ backgroundColor: 'var(--color-primary)' }}>Terapkan</button>
                       </div>
                     )}
                   </motion.div>
                 </div>
-              </div>
-            )}
-          </AnimatePresence>
+              )}
+            </AnimatePresence>
+          </Portal>
         </div>
       );
-    };
-
-    // --- MAIN APP ---
-
-    const useCountdown = (dueDate) => {
-      const [timeLeft, setTimeLeft] = useState('');
-      useEffect(() => {
-        if (!dueDate) return; const target = new Date(dueDate).getTime();
-        const update = () => {
-          const diff = target - Date.now();
-          if (diff <= 0) { setTimeLeft('Telah Berlalu'); return; }
-          const h = Math.floor(diff / (1000 * 60 * 60)); const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)); const s = Math.floor((diff % (1000 * 60)) / 1000);
-          setTimeLeft(`${h}j ${m}m ${s}s`);
-        };
-        update(); const id = setInterval(update, 1000); return () => clearInterval(id);
-      }, [dueDate]);
-      return timeLeft;
-    };
-
-    const CountdownInjector = ({ dueDate }) => {
-      const countdown = useCountdown(dueDate);
-      return <span className="inline-block mt-2 px-3 py-1.5 rounded-[1rem] bg-red-500/15 text-red-500 font-black tracking-widest uppercase border border-red-500/20 w-fit shadow-sm text-[10px]">Sisa: {countdown}</span>;
-    };
-
-    const requestNativeNotification = () => { if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") Notification.requestPermission(); };
-    const triggerNativeNotification = async (title, body) => {
-      if (!("Notification" in window) || Notification.permission !== "granted") return;
-      const options = { body: body, icon: './icon-192.png', badge: './icon-192.png', vibrate: [200, 100, 200] };
-      try { const reg = await navigator.serviceWorker.getRegistration(); if (reg) { await reg.showNotification(title, options); } else { new Notification(title, options); } } catch (err) {}
-    };
-
-    let alarmContext = null; let isAlarmUnlocked = false;
-    const playModernRingtone = () => {
-      try {
-        if (!alarmContext) alarmContext = new (window.AudioContext || window.webkitAudioContext)();
-        if (alarmContext.state === 'suspended') alarmContext.resume();
-        const now = alarmContext.currentTime;
-        const playNote = (freq, startTime, duration) => {
-          const osc = alarmContext.createOscillator(), gain = alarmContext.createGain();
-          osc.type = 'sine'; osc.frequency.setValueAtTime(freq, startTime);
-          gain.gain.setValueAtTime(0, startTime); gain.gain.linearRampToValueAtTime(0.6, startTime + 0.05); gain.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
-          osc.connect(gain); gain.connect(alarmContext.destination); osc.start(startTime); osc.stop(startTime + duration);
-        };
-        playNote(523.25, now, 0.5); playNote(659.25, now + 0.1, 0.5); playNote(783.99, now + 0.2, 0.5); playNote(1046.50, now + 0.3, 1.0); 
-      } catch(e) {}
-    };
-
-    const playWarningChime = () => {
-      try {
-        if (!alarmContext) alarmContext = new (window.AudioContext || window.webkitAudioContext)();
-        if (alarmContext.state === 'suspended') alarmContext.resume();
-        const now = alarmContext.currentTime;
-        const osc = alarmContext.createOscillator(), gain = alarmContext.createGain();
-        osc.type = 'triangle'; osc.frequency.setValueAtTime(800, now); osc.frequency.exponentialRampToValueAtTime(1200, now + 0.1);
-        gain.gain.setValueAtTime(0, now); gain.gain.linearRampToValueAtTime(0.3, now + 0.05); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-        osc.connect(gain); gain.connect(alarmContext.destination); osc.start(now); osc.stop(now + 0.3);
-      } catch(e) {}
-    };
-
-    const unlockAudioSystem = () => {
-      if(!isAlarmUnlocked) { isAlarmUnlocked = true; try { alarmContext = new (window.AudioContext || window.webkitAudioContext)(); if(alarmContext.state === 'suspended') alarmContext.resume(); const osc = alarmContext.createOscillator(), gain = alarmContext.createGain(); gain.gain.value = 0; osc.connect(gain); gain.connect(alarmContext.destination); osc.start(); osc.stop(alarmContext.currentTime + 0.001); } catch (e) {} }
-    };
-
-    const parseVoiceCommand = (text, isShoppingMode = false) => {
-      if (isShoppingMode) {
-        let cleaned = text.replace(/^(?:beli|tambahkan|tolong beli|belanja)\s+/i, '');
-        let items = cleaned.split(/,|\bdan\b|\bsama\b|\bterus\b|\blalu\b|\bkemudian\b/i).map(s => s.trim()).filter(Boolean);
-        return items.map(title => ({ id: (Date.now() + Math.random()).toString(), title: title.charAt(0).toUpperCase() + title.slice(1), dueDate: null, completed: false, notified1h: false, notified30m: false, notified10m: false, notifiedExact: false, createdAt: new Date().toISOString(), category: 'Belanja' }));
-      }
-      let draft = { title: "", notes: "", dueDate: null, category: "Lainnya" }; let lower = text.toLowerCase();
-      const descMatch = lower.match(/(?:dengan deskripsi|deskripsi|catatan)\s+(.*)/);
-      if (descMatch) { draft.notes = text.substring(descMatch.index + descMatch[0].indexOf(descMatch[1])); text = text.substring(0, descMatch.index); lower = text.toLowerCase(); }
-      if(lower.includes("akademik") || lower.includes("kampus") || lower.includes("sekolah")) draft.category = "Akademik"; else if(lower.includes("kerja") || lower.includes("kantor") || lower.includes("rapat")) draft.category = "Pekerjaan"; else if(lower.includes("pribadi") || lower.includes("rumah")) draft.category = "Pribadi";
-      const now = new Date(); let targetDate = new Date(); let timeSet = false;
-      const days = ["minggu", "senin", "selasa", "rabu", "kamis", "jumat", "sabtu"]; const todayIdx = now.getDay();
-      for (let i = 0; i < days.length; i++) { if (lower.includes(`hari ${days[i]}`)) { let dayDiff = i - todayIdx; if (dayDiff <= 0) dayDiff += 7; targetDate.setDate(now.getDate() + dayDiff); timeSet = true; break; } }
-      if (!timeSet) { if (lower.includes("besok")) { targetDate.setDate(now.getDate() + 1); timeSet = true; } else if (lower.includes("lusa")) { targetDate.setDate(now.getDate() + 2); timeSet = true; } }
-      const timeMatch = lower.match(/(?:jam|pukul)\s*(\d{1,2})(?:\s*(pagi|siang|sore|malam))?/);
-      if (timeMatch) { let hour = parseInt(timeMatch[1]); const modifier = timeMatch[2]; if (modifier === 'siang' || modifier === 'sore' || modifier === 'malam') { if (hour < 12) hour += 12; } else if (modifier === 'pagi' && hour === 12) { hour = 0; } targetDate.setHours(hour, 0, 0, 0); timeSet = true; } else if (timeSet) { targetDate.setHours(12, 0, 0, 0); } 
-      if (timeSet) { draft.dueDate = new Date(targetDate.getTime() - (targetDate.getTimezoneOffset() * 60000)).toISOString().slice(0,16); draft.title = text.replace(/besok|lusa|(?:hari\s+(?:senin|selasa|rabu|kamis|jumat|sabtu|minggu))|(?:jam|pukul)\s*\d{1,2}(?:\s*(?:pagi|siang|sore|malam))?/gi, '').trim(); } else { draft.title = text.trim(); }
-      draft.title = draft.title.replace(/akademik|kampus|sekolah|kerja|kantor|rapat|pribadi|rumah/gi, '').trim();
-      if(!draft.title) draft.title = "Tugas Baru"; draft.title = draft.title.charAt(0).toUpperCase() + draft.title.slice(1);
-      return draft;
     };
 
     const ItemCard = ({ item, categories, isShopping, view, onToggle, onEdit, onDelete, onPin }) => {
@@ -614,8 +619,8 @@
       const activeFilteredShop = useMemo(() => getActiveItems(shopItems, shopTab), [shopItems, shopTab, searchQuery, view, urgentFilter]);
       const completionRate = tasks.length === 0 ? 0 : Math.round((tasks.filter(t => t.completed).length / tasks.length) * 100);
       
-      const transitionConfig = { type: "tween", duration: 0.15 };
-      const pageVariants = { initial: { opacity: 0, scale: 0.98 }, in: { opacity: 1, scale: 1 }, out: { opacity: 0, scale: 0.98 } };
+      const transitionConfig = { type: "tween", duration: 0.1 };
+      const pageVariants = { initial: { opacity: 0 }, in: { opacity: 1 }, out: { opacity: 0 } };
 
       return (
         <div className="w-full h-full flex flex-col relative overflow-hidden">
@@ -634,15 +639,17 @@
 
           <AnimatePresence>
             {activeAlarmTask && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/90 backdrop-blur-xl px-6 text-center">
-                <div className="w-28 h-28 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center mb-8 shadow-inner"><Icon name="bell" size={56} /></div>
-                <h2 className="text-4xl font-black text-white tracking-widest mb-4 uppercase text-red-500">Batas Waktu</h2>
-                <p className="text-3xl font-bold text-white mb-16 px-4 leading-relaxed">"{activeAlarmTask.title}"</p>
-                <div className="flex flex-col gap-5 w-full max-w-sm">
-                  <button onClick={stopAlarm} className="w-full py-6 rounded-[2rem] bg-red-600 text-white font-black text-2xl tracking-widest shadow-[0_0_40px_rgba(220,38,38,0.6)]">MATIKAN ALARM</button>
-                  <button onClick={snoozeAlarm} className="w-full py-5 rounded-[2rem] bg-white/10 text-white font-bold text-xl tracking-widest border border-white/20 flex items-center justify-center gap-3"><Icon name="snooze" size={28} /> TUNDA 10 MENIT</button>
-                </div>
-              </motion.div>
+              <Portal>
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed z-[100] flex flex-col items-center justify-center bg-black/90 backdrop-blur-xl px-6 text-center" style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100dvh' }}>
+                  <div className="w-28 h-28 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center mb-8 shadow-inner"><Icon name="bell" size={56} /></div>
+                  <h2 className="text-4xl font-black text-white tracking-widest mb-4 uppercase text-red-500">Batas Waktu</h2>
+                  <p className="text-3xl font-bold text-white mb-16 px-4 leading-relaxed">"{activeAlarmTask.title}"</p>
+                  <div className="flex flex-col gap-5 w-full max-w-sm">
+                    <button onClick={stopAlarm} className="w-full py-6 rounded-[2rem] bg-red-600 text-white font-black text-2xl tracking-widest shadow-[0_0_40px_rgba(220,38,38,0.6)]">MATIKAN ALARM</button>
+                    <button onClick={snoozeAlarm} className="w-full py-5 rounded-[2rem] bg-white/10 text-white font-bold text-xl tracking-widest border border-white/20 flex items-center justify-center gap-3"><Icon name="snooze" size={28} /> TUNDA 10 MENIT</button>
+                  </div>
+                </motion.div>
+              </Portal>
             )}
           </AnimatePresence>
 
@@ -673,13 +680,10 @@
             {view === 'shopping' && (
               <div className="w-full flex flex-col gap-3 mt-1">
                 <div className="flex gap-2 items-center w-full bg-black/10 dark:bg-black/40 p-2 rounded-[2rem] border border-black/5 dark:border-white/5 shadow-inner">
-                  <input type="text" value={shopInputTitle} onChange={e=>setShopInputTitle(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleQuickAddShop()} placeholder="Tambah belanjaan..." className="flex-1 bg-transparent border-none py-2 px-4 text-base font-bold focus:outline-none focus:ring-0 w-1/2" />
-                  
-                  {/* PENYEMPURNAAN KALENDER BELANJA: Menggunakan Pemetik Kustom Polimorfik */}
+                  <input type="text" value={shopInputTitle} onChange={e=>setShopInputTitle(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleQuickAddShop()} placeholder="Tambah belanjaan..." className="flex-1 bg-transparent border-none py-2 px-4 text-base font-bold focus:outline-none focus:ring-0 w-[45%]" />
                   <div className="relative pl-1 border-l-2 border-black/10 dark:border-white/10 shrink-0">
                     <CustomDateTimePicker value={shopInputDate} onChange={setShopInputDate} triggerType="icon" />
                   </div>
-                  
                   <button onClick={handleQuickAddShop} className="p-3 rounded-full text-white shadow-md shrink-0 ml-1" style={{ backgroundColor: 'var(--color-primary)' }}><Icon name="plus" size={20}/></button>
                 </div>
                 <div className="flex rounded-[2rem] p-1.5 bg-black/5 dark:bg-black/20 border border-black/5 dark:border-white/5 shadow-inner">
@@ -712,9 +716,9 @@
           </header>
 
           <main className="flex-1 px-5 pt-6 pb-40 overflow-y-auto z-10 relative scroll-smooth">
-            <AnimatePresence mode="wait">
+            <AnimatePresence mode="popLayout">
               {view === 'settings' ? (
-                <motion.div key="view-settings" variants={pageVariants} initial="initial" animate="in" exit="out" transition={transitionConfig} className="space-y-6">
+                <motion.div key="view-settings" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.1 }} className="space-y-6">
                   <div className="solid-panel p-6 rounded-[2.5rem] space-y-4">
                     <div className="flex items-center gap-3 mb-2"><Icon name="sun" size={20} className="opacity-50" /><h3 className="text-xs font-black opacity-60 tracking-widest uppercase">Tema Visual</h3></div>
                     <div className="grid grid-cols-2 gap-3">
@@ -741,7 +745,7 @@
                   </div>
                 </motion.div>
               ) : (
-                <motion.div key={`view-${view}`} variants={pageVariants} initial="initial" animate="in" exit="out" transition={transitionConfig} className="w-full">
+                <motion.div key={`view-${view}-${view === 'tasks' ? activeTab : shopTab}-${urgentType}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.1 }} className="w-full">
                   {(view === 'tasks' || (view === 'urgent' && urgentType === 'Tugas')) ? activeFilteredTasks.map(task => (
                     <ItemCard key={task.id} item={task} categories={categories} isShopping={false} view={view} onToggle={() => setConfirmDialog({ id: task.id, action: task.completed ? 'uncomplete_task' : 'complete_task', msg: 'Ubah status penyelesaian tugas?' })} onEdit={() => openModal('edit', task, false)} onDelete={() => setConfirmDialog({ id: task.id, action: 'delete_task', msg: 'Hapus tugas ini secara permanen?' })} onPin={() => setTasks(p => p.map(t => t.id === task.id ? {...t, isPinned: !t.isPinned} : t))} />
                   )) : activeFilteredShop.map(item => (
@@ -763,9 +767,9 @@
 
           <AnimatePresence>
             {confirmDialog && (
-              <div className="fixed inset-0 z-[150] bg-black/80 backdrop-blur-sm overflow-y-auto">
-                <div className="min-h-full flex flex-col justify-end sm:justify-center p-4">
-                  <motion.div initial={{ y: '20%', opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: '20%', opacity: 0 }} transition={{ type: "spring", damping: 25, stiffness: 200 }} className="w-full max-w-sm mx-auto bg-[var(--color-surface)] border border-white/10 rounded-[2.5rem] p-8 shadow-2xl flex flex-col items-center text-center">
+              <Portal>
+                <div className="fixed z-[150] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4" style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100dvh' }}>
+                  <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} transition={{ type: "tween", duration: 0.15 }} className="w-full max-w-sm bg-[var(--color-surface)] border border-white/10 rounded-[2.5rem] p-8 shadow-2xl flex flex-col items-center text-center overflow-hidden">
                     <div className={`w-24 h-24 rounded-full flex items-center justify-center mb-6 shadow-inner shrink-0 ${confirmDialog.action.includes('delete') || confirmDialog.action === 'sweep' ? 'bg-red-500/20 text-red-500' : 'bg-primary/20'}`} style={!confirmDialog.action.includes('delete') && confirmDialog.action !== 'sweep' ? { color: 'var(--color-primary)' } : {}}><Icon name={confirmDialog.action.includes('delete') || confirmDialog.action === 'sweep' ? 'trash' : 'checkCircle'} size={48} /></div>
                     <h3 className="text-2xl font-black mb-3">Verifikasi</h3>
                     <p className="text-base opacity-70 mb-8 px-2 leading-relaxed">{confirmDialog.msg}</p>
@@ -781,41 +785,43 @@
                     </div>
                   </motion.div>
                 </div>
-              </div>
+              </Portal>
             )}
           </AnimatePresence>
 
           <AnimatePresence>
             {modalState.isOpen && (
-              <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm overflow-y-auto">
-                <div className="min-h-full flex flex-col justify-end sm:justify-center p-4">
-                  <motion.div initial={{ y: '20%', opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: '20%', opacity: 0 }} transition={{ type: "spring", damping: 25, stiffness: 200 }} className="w-full max-w-md mx-auto bg-[var(--color-surface)] border border-white/10 rounded-[2.5rem] p-5 sm:p-8 shadow-2xl flex flex-col gap-4">
+              <Portal>
+                <div className="fixed z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4" style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100dvh' }}>
+                  <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} transition={{ type: "tween", duration: 0.15 }} className="w-full max-w-md bg-[var(--color-surface)] border border-black/5 dark:border-white/10 rounded-[2.5rem] p-6 sm:p-8 shadow-2xl flex flex-col gap-4 max-h-[85vh] overflow-y-auto scrollbar-hide relative">
                     <h2 className="text-2xl font-black tracking-tight uppercase opacity-90 pl-1 shrink-0">{modalState.mode === 'create' ? 'Data Baru' : 'Revisi'}</h2>
                     
-                    <input type="text" value={draftItem.title} onChange={e => setDraftItem({...draftItem, title: e.target.value})} placeholder="Nama entri..." className="w-full p-4 rounded-[1.5rem] text-lg font-bold border-none bg-black/5 dark:bg-white/5 shrink-0" />
-                    
-                    <div className="grid grid-cols-2 gap-3 shrink-0">
-                      {!modalState.isShop && (
-                        <div className="flex flex-col gap-2">
-                          <label className="text-[10px] font-black opacity-50 uppercase tracking-widest pl-2">Kategori Utama</label>
-                          <CustomCategoryPicker categories={categories} selected={draftItem.category} onChange={c => setDraftItem({...draftItem, category: c})} onAddCategory={(name, color) => setCategories(p => ({...p, [name]: color}))} />
+                    <div className="flex-1 overflow-y-auto space-y-4 scrollbar-hide pb-2">
+                      <input type="text" value={draftItem.title} onChange={e => setDraftItem({...draftItem, title: e.target.value})} placeholder="Nama entri..." className="w-full p-4 rounded-[1.5rem] text-lg font-bold border-none bg-black/5 dark:bg-white/5" />
+                      
+                      <div className="grid grid-cols-2 gap-3">
+                        {!modalState.isShop && (
+                          <div className="flex flex-col gap-2">
+                            <label className="text-[10px] font-black opacity-50 uppercase tracking-widest pl-2">Kategori Utama</label>
+                            <CustomCategoryPicker categories={categories} selected={draftItem.category} onChange={c => setDraftItem({...draftItem, category: c})} onAddCategory={(name, color) => setCategories(p => ({...p, [name]: color}))} />
+                          </div>
+                        )}
+                        <div className={`flex flex-col gap-2 ${modalState.isShop ? 'col-span-2' : ''}`}>
+                          <label className="text-[10px] font-black opacity-50 uppercase tracking-widest pl-2">Tenggat Waktu</label>
+                          <CustomDateTimePicker value={draftItem.dueDate} onChange={d => setDraftItem({...draftItem, dueDate: d})} />
                         </div>
-                      )}
-                      <div className={`flex flex-col gap-2 ${modalState.isShop ? 'col-span-2' : ''}`}>
-                        <label className="text-[10px] font-black opacity-50 uppercase tracking-widest pl-2">Tenggat Waktu</label>
-                        <CustomDateTimePicker value={draftItem.dueDate} onChange={d => setDraftItem({...draftItem, dueDate: d})} />
                       </div>
-                    </div>
 
-                    {!modalState.isShop && <textarea value={draftItem.notes} onChange={e => setDraftItem({...draftItem, notes: e.target.value})} placeholder="Catatan/Deskripsi..." className="w-full p-4 rounded-[1.5rem] border-none min-h-[100px] resize-none text-sm font-medium leading-relaxed bg-black/5 dark:bg-white/5 shrink-0 mt-1"></textarea>}
+                      {!modalState.isShop && <textarea value={draftItem.notes} onChange={e => setDraftItem({...draftItem, notes: e.target.value})} placeholder="Catatan/Deskripsi..." className="w-full p-4 rounded-[1.5rem] border-none min-h-[100px] resize-none text-sm font-medium leading-relaxed bg-black/5 dark:bg-white/5"></textarea>}
+                    </div>
                     
-                    <div className="flex gap-3 pt-2 mt-auto shrink-0">
+                    <div className="flex gap-3 pt-2 shrink-0">
                       <button onClick={() => setModalState({isOpen:false})} className="flex-1 py-4 rounded-[1.5rem] bg-black/5 dark:bg-white/10 font-bold text-base active:scale-95 transition-transform">Batal</button>
                       <button onClick={handleSaveDraft} className="flex-1 py-4 rounded-[1.5rem] font-bold text-white shadow-xl text-base border active:scale-95 transition-transform" style={{ backgroundColor: 'var(--color-primary)' }}>Simpan</button>
                     </div>
                   </motion.div>
                 </div>
-              </div>
+              </Portal>
             )}
           </AnimatePresence>
         </div>
