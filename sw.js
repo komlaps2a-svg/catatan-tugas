@@ -1,5 +1,5 @@
-// V6 Iterasi ke-11
-const CACHE_VERSION = '1.1.1';
+// V6 Iterasi ke-17
+const CACHE_VERSION = '1.1.5';
 const CACHE_NAME = `tugas-v6-cache-${CACHE_VERSION}`;
 
 const STATIC_ASSETS = [
